@@ -98,6 +98,13 @@ def get_photo(filename: str):
         return FileResponse(file_path)
     return {"detail": "Not Found"}
 
+@app.get("/profile-photo")
+def get_profile_photo():
+    profile_photo_path = os.path.join(PHOTOS_DIR, "profile_photo.png")
+    if os.path.exists(profile_photo_path):
+        return FileResponse(profile_photo_path)
+    return {"detail": "Profile photo not found"}
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Photos App API!"}
