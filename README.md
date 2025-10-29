@@ -53,3 +53,9 @@ TBD (demo GIF using mocked data).
 
 ## Demo
 - The default build uses a mocked backtest harness to produce a deterministic demo in the UI.
+
+## Roadmap (Post-V1)
+- Home Screen widget with live "Leave in X min" + confidence.
+- Watch app for quick confirm.
+- Optional server proxy for rate limits + caching; weekly priors.
+

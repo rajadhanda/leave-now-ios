@@ -11,3 +11,9 @@
 - Implement services and DTOs.
 - Deterministic engine with unit tests.
 - Add uncertainty model and scoring.
+
+## Progress
+- Milestones 1-5 implemented with mocked demo path.
+- Persistence is JSON-backed for V1 simplicity.
+- Next: Wire real services and Core Data swap if needed.
+
