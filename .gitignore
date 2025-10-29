@@ -1,0 +1,22 @@
+# Xcode
+*.xcworkspace/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+build/
+*.xcdatamodeld/*.xccurrentversion
+
+# Swift Package Manager
+/.build/
+/Packages/
+Package.pins
+
+# SwiftLint cache
+.swiftlint.yml
+.swiftlint.cache
+
+# Secrets (real)
+App/Support/Secrets.plist
+
+# macOS
+.DS_Store
