@@ -12,7 +12,7 @@ struct LeaveNowView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                TextField("Destination", text: $destination)
+                DestinationPicker(destination: $destination)
                     .textFieldStyle(.roundedBorder)
                 Button("Leave now?") {
                     // TODO: trigger recommendation
