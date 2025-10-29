@@ -18,9 +18,16 @@ struct SettingsView: View {
                     }
             }
             Section("Weights (Advanced)") {
-                Text("Configure α β γ δ in a later milestone")
-                    .foregroundStyle(.secondary)
-                    .font(.footnote)
+                VStack(alignment: .leading) {
+                    Text("α (variance weight)")
+                    Slider(value: .constant(0.7), in: 0...2)
+                    Text("β (changes penalty)")
+                    Slider(value: .constant(2.0), in: 0...5)
+                    Text("γ (walk penalty)")
+                    Slider(value: .constant(0.3), in: 0...2)
+                    Text("δ (comfort bonus)")
+                    Slider(value: .constant(1.0), in: 0...3)
+                }
             }
         }
         .navigationTitle("Settings")
