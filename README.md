@@ -59,3 +59,13 @@ TBD (demo GIF using mocked data).
 - Watch app for quick confirm.
 - Optional server proxy for rate limits + caching; weekly priors.
 
+
+## Generate Xcode project (XcodeGen)
+1. Install XcodeGen: `brew install xcodegen`
+2. Generate project: `xcodegen generate`
+3. Open `LeaveNow.xcodeproj` and run the app.
+4. Copy `App/Support/Secrets.plist.example` to `App/Support/Secrets.plist` and add keys.
+
+Schemes:
+- LeaveNow-Debug (MOCK_DATA=YES)
+- LeaveNow-Release (MOCK_DATA=NO)
