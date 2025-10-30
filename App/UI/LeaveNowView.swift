@@ -44,9 +44,17 @@ struct LeaveNowView: View {
             // 3) Weather at origin
             let weatherSvc = OpenWeatherService()
             let rain = try await weatherSvc.currentRainIntensity(at: originCoord.latitude, lon: originCoord.longitude)
-            let weather: Weather? = rain.map { .init(raining: $0 > 0.1, rainIntensity: $0, walkingPenaltyMinutes: Int(round($0 * 5.0))) }
+            let weather: Weather? = rain.map { Weather(precipitationMmPerHr: $0) }
 
-            // 4) Score and select best/fallback
+            // 4) Realtime Trains (optional): Euston (EUS) → Milton Keynes Central (MKC)
+            var railMeta: RailLegMeta? = nil
+            if let rtt = RealtimeTrainsService() {
+                if let first = try? await rtt.nextServices(from: "EUS", to: "MKC", around: Date(), limit: 1).first {
+                    railMeta = first
+                }
+            }
+
+            // 5) Score and select best/fallback
             let recV2 = RecommenderV2(kRain: UserPrefs.shared.rainSensitivity, alpha: 0.7, beta: 2.0, gamma: 0.3, delta: 1.0)
             let disruptions: [Disruption] = []
             guard let result = recV2.recommend(plans: plans, weather: weather, disruptions: disruptions) else {
@@ -54,7 +62,7 @@ struct LeaveNowView: View {
                 return
             }
 
-            // 5) Build UI Recommendation from engine result
+            // 6) Build UI Recommendation from engine result
             let now = Date()
             let best = result.best
             let fb = result.fallback
@@ -63,11 +71,11 @@ struct LeaveNowView: View {
                 return lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
             }()
             let routeSummary: [RouteLegSummary] = best.plan.legs.map { leg in
-                .init(type: mapMode(leg.mode), lineOrService: leg.lineId, approxMinutes: leg.durationMinutes)
+                RouteLegSummary(type: mapMode(leg.mode), lineOrService: leg.lineId, approxMinutes: leg.durationMinutes)
             }
             let fallbackSummary: ([RouteLegSummary], String, Int, Int)? = fb.map { f in
                 let lbl: String = f.plan.legs.compactMap { $0.lineId }.joined(separator: " → ")
-                let legs = f.plan.legs.map { .init(type: mapMode($0.mode), lineOrService: $0.lineId, approxMinutes: $0.durationMinutes) }
+                let legs = f.plan.legs.map { RouteLegSummary(type: mapMode($0.mode), lineOrService: $0.lineId, approxMinutes: $0.durationMinutes) }
                 return (legs, lbl, f.plan.changes, f.plan.walkMinutes)
             }
 
@@ -87,7 +95,7 @@ struct LeaveNowView: View {
                     legs: routeSummary,
                     changes: best.plan.changes,
                     walkingMinutes: best.plan.walkMinutes,
-                    platformHint: nil,
+                    platformHint: railMeta?.departure.platform,
                     comfort: .minimalWalking
                 ),
                 fallback: fallbackSummary.map { fs in
@@ -102,12 +110,12 @@ struct LeaveNowView: View {
                     )
                 },
                 variance: .init(etaP50Minutes: best.p50Minutes, etaP90Minutes: best.p90Minutes),
-                confidence: .init(score: best.confidence, level: best.confidence > 0.75 ? .high : (best.confidence > 0.5 ? .medium : .low), limitingFactors: weather?.raining == true ? [.weatherImpact] : []),
+                confidence: .init(score: best.confidence, level: best.confidence > 0.75 ? .high : (best.confidence > 0.5 ? .medium : .low), limitingFactors: (rain ?? 0) > 0.1 ? [.weatherImpact] : []),
                 rationale: .init(oneLine: best.rationale, highlights: []),
                 inputs: .init(
                     dataFreshness: .init(transitUpdatedAt: now, disruptionsUpdatedAt: now, weatherUpdatedAt: now),
-                    weather: weather,
-                    disruptions: disruptions,
+                    weather: .init(raining: (rain ?? 0) > 0.1, rainIntensity: rain, walkingPenaltyMinutes: Int(round((rain ?? 0) * 5.0))),
+                    disruptions: [] as [DisruptionImpact],
                     priorsVersion: "priors-v0.3.2",
                     weights: .init(alphaVariance: 0.7, betaChanges: 2.0, gammaWalking: 0.3, deltaComfort: 1.0)
                 ),
@@ -165,14 +173,14 @@ extension LeaveNowView {
     }
 }
 
-private func mapMode(_ mode: LegMode) -> RouteLegType {
+private func mapMode(_ mode: LegMode) -> LegType {
     switch mode {
     case .walk: return .walk
     case .tube: return .tube
     case .bus: return .bus
     case .overground: return .overground
     case .dlr: return .dlr
-    case .nationalRail: return .nationalRail
+    case .nationalRail: return .rail
     }
 }
 
