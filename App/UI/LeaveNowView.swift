@@ -19,6 +19,9 @@ struct LeaveNowView: View {
                     } label: { Image(systemName: "arrow.clockwise") }
                 }
             }
+            .onReceive(inject.objectWillChange) { _ in
+                Task { await refresh() }
+            }
             .task { await refresh() }
         }
         .enableInjection()
