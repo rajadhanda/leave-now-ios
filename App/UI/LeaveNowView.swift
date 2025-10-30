@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 
 struct LeaveNowView: View {
@@ -25,8 +26,97 @@ struct LeaveNowView: View {
     }
 
     private func refresh() async {
-        // TODO: fetch recommendation from Engine (stub for now)
-        vm.bind(Self.mockRecommendation())
+        do {
+            // 1) Geocode hardcoded postcodes (demo)
+            let geocoder = GeocodingHelper()
+            async let oCoord = geocoder.geocode(postcode: DemoConfig.originPostcode)
+            async let dCoord = geocoder.geocode(postcode: DemoConfig.destinationPostcode)
+            let (originCoord, destCoord) = try await (oCoord, dCoord)
+
+            // 2) Fetch journey plans from TfL
+            let tfl = TflTransitService()
+            let plans = try await tfl.journeyPlans(from: originCoord, to: destCoord, departure: Date())
+            guard !plans.isEmpty else {
+                vm.bind(Self.mockRecommendation())
+                return
+            }
+
+            // 3) Weather at origin
+            let weatherSvc = OpenWeatherService()
+            let rain = try await weatherSvc.currentRainIntensity(at: originCoord.latitude, lon: originCoord.longitude)
+            let weather: Weather? = rain.map { .init(raining: $0 > 0.1, rainIntensity: $0, walkingPenaltyMinutes: Int(round($0 * 5.0))) }
+
+            // 4) Score and select best/fallback
+            let recV2 = RecommenderV2(kRain: UserPrefs.shared.rainSensitivity, alpha: 0.7, beta: 2.0, gamma: 0.3, delta: 1.0)
+            let disruptions: [Disruption] = []
+            guard let result = recV2.recommend(plans: plans, weather: weather, disruptions: disruptions) else {
+                vm.bind(Self.mockRecommendation())
+                return
+            }
+
+            // 5) Build UI Recommendation from engine result
+            let now = Date()
+            let best = result.best
+            let fb = result.fallback
+            let routeLabel: String = {
+                let lines = best.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
+                return lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
+            }()
+            let routeSummary: [RouteLegSummary] = best.plan.legs.map { leg in
+                .init(type: mapMode(leg.mode), lineOrService: leg.lineId, approxMinutes: leg.durationMinutes)
+            }
+            let fallbackSummary: ([RouteLegSummary], String, Int, Int)? = fb.map { f in
+                let lbl: String = f.plan.legs.compactMap { $0.lineId }.joined(separator: " → ")
+                let legs = f.plan.legs.map { .init(type: mapMode($0.mode), lineOrService: $0.lineId, approxMinutes: $0.durationMinutes) }
+                return (legs, lbl, f.plan.changes, f.plan.walkMinutes)
+            }
+
+            let rec = Recommendation(
+                id: .init(),
+                generatedAt: now,
+                context: .init(
+                    origin: .init(label: DemoConfig.originPostcode, geo: nil, transitStopID: nil),
+                    destination: .init(label: DemoConfig.destinationPostcode, geo: nil, transitStopID: nil),
+                    habitualCommute: true,
+                    window: .init(recommendedDeparture: Calendar.current.date(byAdding: .minute, value: 0, to: now), mode: .now)
+                ),
+                decision: .leaveNow,
+                route: .init(
+                    label: routeLabel,
+                    fingerprint: .init(lineSequence: best.plan.legs.compactMap { $0.lineId }, stopIds: nil),
+                    legs: routeSummary,
+                    changes: best.plan.changes,
+                    walkingMinutes: best.plan.walkMinutes,
+                    platformHint: nil,
+                    comfort: .minimalWalking
+                ),
+                fallback: fallbackSummary.map { fs in
+                    .init(
+                        label: fs.1,
+                        fingerprint: .init(lineSequence: fb?.plan.legs.compactMap { $0.lineId } ?? [], stopIds: nil),
+                        legs: fs.0,
+                        changes: fs.2,
+                        walkingMinutes: fs.3,
+                        platformHint: nil,
+                        comfort: .fewerChanges
+                    )
+                },
+                variance: .init(etaP50Minutes: best.p50Minutes, etaP90Minutes: best.p90Minutes),
+                confidence: .init(score: best.confidence, level: best.confidence > 0.75 ? .high : (best.confidence > 0.5 ? .medium : .low), limitingFactors: weather?.raining == true ? [.weatherImpact] : []),
+                rationale: .init(oneLine: best.rationale, highlights: []),
+                inputs: .init(
+                    dataFreshness: .init(transitUpdatedAt: now, disruptionsUpdatedAt: now, weatherUpdatedAt: now),
+                    weather: weather,
+                    disruptions: disruptions,
+                    priorsVersion: "priors-v0.3.2",
+                    weights: .init(alphaVariance: 0.7, betaChanges: 2.0, gammaWalking: 0.3, deltaComfort: 1.0)
+                ),
+                ttlSeconds: 300
+            )
+            vm.bind(rec)
+        } catch {
+            vm.bind(Self.mockRecommendation())
+        }
     }
 }
 
@@ -72,6 +162,17 @@ extension LeaveNowView {
             ),
             ttlSeconds: 300
         )
+    }
+}
+
+private func mapMode(_ mode: LegMode) -> RouteLegType {
+    switch mode {
+    case .walk: return .walk
+    case .tube: return .tube
+    case .bus: return .bus
+    case .overground: return .overground
+    case .dlr: return .dlr
+    case .nationalRail: return .nationalRail
     }
 }
 
