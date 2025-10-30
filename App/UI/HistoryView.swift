@@ -1,19 +1,16 @@
 import SwiftUI
 
 struct HistoryView: View {
-    @ObservedObject var store = TripHistoryStore.shared
+    // Placeholder view until history store is implemented for UI
 
     var body: some View {
-        List(store.trips) { trip in
-            VStack(alignment: .leading) {
-                Text("P50: \(trip.selectedP50)m  Changes: \(trip.changes)")
-                Text("Start: \(trip.startedAt.formatted())  End: \(trip.endedAt.formatted())")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }.navigationTitle("History")
-        .toolbar {
-            Button("Clear history") { store.clear() }
+        VStack(spacing: 12) {
+            Text("Trip History")
+                .font(.headline)
+            Text("No history yet")
+                .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle("History")
     }
 }

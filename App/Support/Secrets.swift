@@ -12,4 +12,14 @@ enum Secrets {
     static var tflAppId: String { dict[Config.tflAppIdKey] as? String ?? "" }
     static var tflAppKey: String { dict[Config.tflAppKeyKey] as? String ?? "" }
     static var openWeatherKey: String { dict[Config.openWeatherKey] as? String ?? "" }
+
+    // RealtimeTrains config from Info.plist
+    static var realtimeTrainsBaseURL: URL? {
+        guard let s = Bundle.main.object(forInfoDictionaryKey: "REALTIMETRAINS_BASE_URL") as? String,
+              let url = URL(string: s) else { return nil }
+        return url
+    }
+    static var realtimeTrainsApiKey: String? {
+        Bundle.main.object(forInfoDictionaryKey: "REALTIMETRAINS_API_KEY") as? String
+    }
 }

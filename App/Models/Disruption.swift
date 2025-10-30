@@ -1,6 +1,6 @@
 import Foundation
 
-enum DisruptionSeverity { case minor, moderate, severe }
+public enum DisruptionSeverity: String, Codable { case minor, moderate, severe }
 
 struct Disruption: Identifiable {
     let id = UUID()

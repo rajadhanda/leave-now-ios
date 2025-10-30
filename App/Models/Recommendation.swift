@@ -136,7 +136,7 @@ public struct DisruptionImpact: Codable, Equatable {
     public let modeledDelayStdMin: Double
 }
 
-public enum DisruptionSeverity: String, Codable { case minor, moderate, severe }
+// DisruptionSeverity is defined in `Disruption.swift` and reused here
 
 public struct ScoringWeights: Codable, Equatable {
     public let alphaVariance: Double
@@ -163,12 +163,4 @@ public enum ArrivalJudgement: String, Codable { case earlier, asExpected, later 
 
 public enum DeviationIntent: String, Codable { case intentional, unintentional }
 
-import Foundation
-
-struct Recommendation {
-    let plan: JourneyPlan
-    let p50Minutes: Int
-    let p90Minutes: Int
-    let confidence: Double
-    let rationale: String
-}
+// Legacy simple recommendation model removed to avoid name collisions
