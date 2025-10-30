@@ -51,6 +51,7 @@ struct RecommenderV2 {
         }
         let sorted = scored.sorted { $0.4 < $1.4 }
         func toRec(_ tup: (JourneyPlan, Int, Int, Double, Double)) -> EngineRecommendation {
+<<<<<<< Updated upstream
             EngineRecommendation(plan: tup.0,
                                 p50Minutes: tup.1,
                                 p90Minutes: tup.2,
@@ -61,6 +62,9 @@ struct RecommenderV2 {
                                                                           rainDelta: 0,
                                                                           hasSevereDelaysOnKeyLeg: false,
                                                                           keyLineName: nil))
+=======
+            EngineRecommendation(plan: tup.0, p50Minutes: tup.1, p90Minutes: tup.2, confidence: tup.3, rationale: ExplanationBuilder().rationale(p50: tup.1, p90: tup.2, changes: tup.0.changes, rainDelta: 0, hasSevereDelaysOnKeyLeg: false, keyLineName: nil))
+>>>>>>> Stashed changes
         }
         let best = toRec(sorted[0])
         let fallback = sorted.count > 1 ? toRec(sorted[1]) : nil

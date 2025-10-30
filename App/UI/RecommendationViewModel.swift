@@ -6,7 +6,7 @@ final class RecommendationViewModel: ObservableObject {
 
     init(rec: Recommendation? = nil) { self.rec = rec }
 
-    func bind(_ r: Recommendation) { self.rec = r }
+    func bind(_ r:  Recommendation) { self.rec = r }
 
     // UI-mapped strings
     var title: String {

@@ -1,7 +1,9 @@
 import SwiftUI
+import Inject
 
 struct LeaveNowView: View {
     @StateObject private var vm = RecommendationViewModel()
+    @ObserveInjection var inject
 
     var body: some View {
         NavigationStack {
@@ -19,6 +21,7 @@ struct LeaveNowView: View {
             }
             .task { await refresh() }
         }
+        .enableInjection()
     }
 
     private func refresh() async {
