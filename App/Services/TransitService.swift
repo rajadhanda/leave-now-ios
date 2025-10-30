@@ -1,5 +1,9 @@
 import Foundation
 
+public struct RailAttachment: Equatable, Codable {
+    public let meta: RailLegMeta
+}
+
 public struct JourneyCandidate {
     public let label: String
     public let lineSequence: [String]
@@ -7,6 +11,7 @@ public struct JourneyCandidate {
     public let changes: Int
     public let walkingMinutes: Int
     public let platformHint: String?
+    public let rail: RailAttachment?
 }
 
 public protocol TransitService {
