@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -70,7 +70,7 @@
 		3DACBA925407E8BFFD41329C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4272D616BCD2038A4FB3155B /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Secrets.plist; sourceTree = "<group>"; };
 		46EAF1774B23EC95B52BE3DF /* ETAEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETAEstimator.swift; sourceTree = "<group>"; };
-		4CF121D705C92F572B90B29D /* LeaveNow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LeaveNow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF121D705C92F572B90B29D /* Leave Now?.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Leave Now?.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		50F328BA049F525B891F0C0D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		586AA68D0BD5BA8086CB4C08 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		6FDA1356C28FF6F6F6CDFA69 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
@@ -79,7 +79,7 @@
 		842161B7BAAC39CC44D3C81F /* ExplanationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplanationBuilder.swift; sourceTree = "<group>"; };
 		92C69833B191792E08C658CC /* TransitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitService.swift; sourceTree = "<group>"; };
 		937A330D89D6345D2550C3FA /* Weather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Weather.swift; sourceTree = "<group>"; };
-		941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */ = {isa = PBXFileReference; path = Secrets.plist.example; sourceTree = "<group>"; };
+		941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Secrets.plist.example; sourceTree = "<group>"; };
 		A3A607EF71A0A54D2F13F6AF /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AC33FCCB8B361C3997765B70 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		AD050FB86C7C9F7478C610C7 /* UncertaintyModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModel.swift; sourceTree = "<group>"; };
@@ -139,7 +139,7 @@
 		8BBDB65B1D3985ECCAE99531 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4CF121D705C92F572B90B29D /* LeaveNow.app */,
+				4CF121D705C92F572B90B29D /* Leave Now?.app */,
 				2C4E840C9018B4873333E31D /* LeaveNowTests.xctest */,
 			);
 			name = Products;
@@ -261,7 +261,7 @@
 			packageProductDependencies = (
 			);
 			productName = LeaveNow;
-			productReference = 4CF121D705C92F572B90B29D /* LeaveNow.app */;
+			productReference = 4CF121D705C92F572B90B29D /* Leave Now?.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -291,7 +291,6 @@
 			);
 			mainGroup = 9E0FAA5B99D645BE06BE8BDE;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -452,6 +451,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 3C2VKX28YL;
 				INFOPLIST_FILE = App/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -551,6 +551,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 3C2VKX28YL;
 				INFOPLIST_FILE = App/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

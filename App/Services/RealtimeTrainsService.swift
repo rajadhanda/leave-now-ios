@@ -6,8 +6,8 @@ struct RealtimeTrainsService: NationalRailService {
     private let apiKey: String
 
     init?(session: URLSession = .shared) {
-        guard let baseURL = Secrets.realtimeTrainsBaseURL,
-              let apiKey = Secrets.realtimeTrainsApiKey else { return nil }
+        guard let baseURL = RTTSecrets.realtimeTrainsBaseURL,
+              let apiKey = RTTSecrets.realtimeTrainsApiKey else { return nil }
         self.session = session
         self.baseURL = baseURL
         self.apiKey = apiKey
