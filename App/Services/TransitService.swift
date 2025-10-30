@@ -1,9 +1,5 @@
 import Foundation
 
-public struct RailAttachment: Equatable, Codable {
-    public let meta: RailLegMeta
-}
-
 public struct JourneyCandidate {
     public let label: String
     public let lineSequence: [String]

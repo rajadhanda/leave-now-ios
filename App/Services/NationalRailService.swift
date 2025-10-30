@@ -21,6 +21,10 @@ public struct RailLegMeta: Equatable, Codable {
     public let arrival: RailServiceCall
 }
 
+public struct RailAttachment: Equatable, Codable {
+    public let meta: RailLegMeta
+}
+
 public protocol NationalRailService {
     func nextServices(from originCRS: String, to destCRS: String, around when: Date, limit: Int) async throws -> [RailLegMeta]
 }
