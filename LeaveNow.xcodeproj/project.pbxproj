@@ -46,6 +46,9 @@
 		F1CA051F04390745212C3FBF /* UncertaintyModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD050FB86C7C9F7478C610C7 /* UncertaintyModel.swift */; };
 		F7D60A8CA557C51EFC8EC9D5 /* Recommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D36E74276B2D99F9460EA5E /* Recommendation.swift */; };
 		FC9E3767B26C5E21F6B8245C /* TransitAggregation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */; };
+		A1D2E3F4B5C6978899AA0011 /* TflTransitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA000E /* TflTransitService.swift */; };
+		A1D2E3F4B5C6978899AA0012 /* Geocoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA000F /* Geocoding.swift */; };
+		A1D2E3F4B5C6978899AA0013 /* DemoConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA0010 /* DemoConfig.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +104,9 @@
 		EA711E927EC04140DF8D1AAE /* Recommender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recommender.swift; sourceTree = "<group>"; };
 		ED760F94B8585E1894525956 /* RecommendationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationCard.swift; sourceTree = "<group>"; };
 		FD60E32A0B2D7802239F9C47 /* RecommendationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationViewModel.swift; sourceTree = "<group>"; };
+		A1D2E3F4B5C6978899AA000E /* TflTransitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TflTransitService.swift; sourceTree = "<group>"; };
+		A1D2E3F4B5C6978899AA000F /* Geocoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geocoding.swift; sourceTree = "<group>"; };
+		A1D2E3F4B5C6978899AA0010 /* DemoConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoConfig.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -142,6 +148,7 @@
 				1A1D4EB79CD7D7CD59368EAB /* MapsService.swift */,
 				11DB2F736D7AF021338AE345 /* NationalRailService.swift */,
 				E3B1F3F4EE2635D9B80CB912 /* RealtimeTrainsService.swift */,
+				A1D2E3F4B5C6978899AA000E /* TflTransitService.swift */,
 				D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */,
 				92C69833B191792E08C658CC /* TransitService.swift */,
 				6FDA1356C28FF6F6F6CDFA69 /* WeatherService.swift */,
@@ -201,6 +208,8 @@
 				4272D616BCD2038A4FB3155B /* Secrets.plist */,
 				941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */,
 				A3A607EF71A0A54D2F13F6AF /* Secrets.swift */,
+				A1D2E3F4B5C6978899AA0010 /* DemoConfig.swift */,
+				A1D2E3F4B5C6978899AA000F /* Geocoding.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -377,6 +386,9 @@
 				AFE6F47AB1084889EF1F7DA5 /* UserPrefs.swift in Sources */,
 				DB21185FB85490E2A366BFB1 /* Weather.swift in Sources */,
 				5F3CCB46496604614702C179 /* WeatherService.swift in Sources */,
+				A1D2E3F4B5C6978899AA0011 /* TflTransitService.swift in Sources */,
+				A1D2E3F4B5C6978899AA0012 /* Geocoding.swift in Sources */,
+				A1D2E3F4B5C6978899AA0013 /* DemoConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
