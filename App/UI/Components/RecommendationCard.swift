@@ -29,15 +29,17 @@ struct RecommendationCard: View {
             Text("Route: \(vm.routeLabel)")
                 .font(.subheadline)
 
+            if let hint = vm.rec?.route.platformHint, !hint.isEmpty {
+                Text("Directions")
+                    .font(.subheadline).bold()
+                Text(hint)
+                    .font(.subheadline)
+            }
+
             Text("Reason: \(vm.rationale)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            if let hint = vm.rec?.route.platformHint, !hint.isEmpty {
-                Divider()
-                Text(hint)
-                    .font(.subheadline)
-            }
 
             if vm.hasFallback {
                 Button {
