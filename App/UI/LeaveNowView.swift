@@ -53,6 +53,7 @@ struct LeaveNowView: View {
             // 3) Weather at origin
             let weatherSvc = OpenWeatherService()
             let rain = try await weatherSvc.currentRainIntensity(at: originCoord.latitude, lon: originCoord.longitude)
+            let rainEnd: Date? = try? await weatherSvc.rainEndTime(at: originCoord.latitude, lon: originCoord.longitude, horizonHours: 12)
             let weather: Weather? = rain.map { Weather(precipitationMmPerHr: $0) }
 
             // 4) Realtime Trains (optional): Euston (EUS) → Milton Keynes Central (MKC)
@@ -75,12 +76,41 @@ struct LeaveNowView: View {
             let now = Date()
             let best = result.best
             let fb = result.fallback
+            // Compute minutes to first national rail leg (if present)
+            let minutesToRail: Int? = {
+                var acc = 0
+                for leg in best.plan.legs {
+                    if leg.mode == .nationalRail { return acc }
+                    acc += leg.durationMinutes
+                }
+                return nil
+            }()
             let routeLabel: String = {
                 let lines = best.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
                 return lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
             }()
             // Enrichment strings for stations/platforms
-            let tubeStartStation: String? = best.plan.legs.first(where: { $0.mode == .tube })?.fromStation
+            let firstTransitLeg = best.plan.legs.first(where: { $0.mode != .walk })
+            let startStationText: String? = firstTransitLeg.flatMap { leg in
+                let name = (leg.fromStation?.isEmpty == false) ? leg.fromStation : nil
+                let toward = (leg.toStation?.isEmpty == false) ? leg.toStation : nil
+                let line = (leg.lineId?.isEmpty == false) ? leg.lineId : nil
+                let modeLabel: String = {
+                    switch leg.mode {
+                    case .tube: return "Tube"
+                    case .bus: return "Bus"
+                    case .overground: return "Overground"
+                    case .dlr: return "DLR"
+                    case .nationalRail: return "National Rail"
+                    case .walk: return "Walk"
+                    }
+                }()
+                if let name { return "\(modeLabel) from: \(name)" }
+                if let line, let toward { return "\(modeLabel): take \(line) towards \(toward)" }
+                if let line { return "\(modeLabel): take \(line)" }
+                return nil
+            }
+            let hasRailLeg = best.plan.legs.contains(where: { $0.mode == .nationalRail })
             let railPlatformInfo: String? = railMeta.flatMap { meta in
                 let timeFmt: DateFormatter = {
                     let df = DateFormatter()
@@ -90,10 +120,10 @@ struct LeaveNowView: View {
                 let timeStr = meta.departure.estimatedTime.map(timeFmt.string) ?? timeFmt.string(from: meta.departure.plannedTime)
                 let plat = meta.departure.platform.map { "Platform \($0)" } ?? "Platform TBC"
                 return "National Rail: Euston → Milton Keynes Central, depart \(timeStr), \(plat)"
-            }
+            } ?? (hasRailLeg ? "National Rail: Euston → Milton Keynes Central, live platform unavailable" : nil)
             let platformHintCombined: String? = {
                 var parts: [String] = []
-                if let s = tubeStartStation { parts.append("Tube from: \(s)") }
+                if let s = startStationText { parts.append(s) }
                 if let rail = railPlatformInfo { parts.append(rail) }
                 return parts.isEmpty ? nil : parts.joined(separator: " • ")
             }()
@@ -106,6 +136,23 @@ struct LeaveNowView: View {
                 return (legs, lbl, f.plan.changes, f.plan.walkMinutes)
             }
 
+            // Optimize departure to reduce wait at Euston when railMeta is known
+            var decision: LeaveDecision = .leaveNow
+            var recommendedDeparture: Date? = now
+            if let railMeta, let m2r = minutesToRail {
+                let arrivalAtEuston = Calendar.current.date(byAdding: .minute, value: m2r, to: now) ?? now
+                let trainDep = railMeta.departure.estimatedTime ?? railMeta.departure.plannedTime
+                let waitSeconds = trainDep.timeIntervalSince(arrivalAtEuston)
+                let bufferSeconds: TimeInterval = 5 * 60
+                if waitSeconds > (8 * 60) {
+                    let depTime = trainDep.addingTimeInterval(-bufferSeconds).addingTimeInterval(Double(-m2r * 60))
+                    if depTime > now {
+                        decision = .leaveInMinutes
+                        recommendedDeparture = depTime
+                    }
+                }
+            }
+
             let rec = Recommendation(
                 id: .init(),
                 generatedAt: now,
@@ -113,9 +160,9 @@ struct LeaveNowView: View {
                     origin: .init(label: DemoConfig.originPostcode, geo: nil, transitStopID: nil),
                     destination: .init(label: DemoConfig.destinationPostcode, geo: nil, transitStopID: nil),
                     habitualCommute: true,
-                    window: .init(recommendedDeparture: Calendar.current.date(byAdding: .minute, value: 0, to: now), mode: .now)
+                    window: .init(recommendedDeparture: recommendedDeparture, mode: decision == .leaveNow ? .now : .inMinutes)
                 ),
-                decision: .leaveNow,
+                decision: decision,
                 route: .init(
                     label: routeLabel,
                     fingerprint: .init(lineSequence: best.plan.legs.compactMap { $0.lineId }, stopIds: nil),
@@ -141,7 +188,7 @@ struct LeaveNowView: View {
                 rationale: .init(oneLine: best.rationale, highlights: []),
                 inputs: .init(
                     dataFreshness: .init(transitUpdatedAt: now, disruptionsUpdatedAt: now, weatherUpdatedAt: now),
-                    weather: .init(raining: (rain ?? 0) > 0.1, rainIntensity: rain, walkingPenaltyMinutes: Int(round((rain ?? 0) * 5.0))),
+                    weather: .init(raining: (rain ?? 0) > 0.1, rainIntensity: rain, walkingPenaltyMinutes: Int(round((rain ?? 0) * 5.0)), rainEndsAt: rainEnd),
                     disruptions: [] as [DisruptionImpact],
                     priorsVersion: "priors-v0.3.2",
                     weights: .init(alphaVariance: 0.7, betaChanges: 2.0, gammaWalking: 0.3, deltaComfort: 1.0)
@@ -190,7 +237,7 @@ extension LeaveNowView {
             rationale: .init(oneLine: "Light rain adds +2m walking; no delays on your segment.", highlights: []),
             inputs: .init(
                 dataFreshness: .init(transitUpdatedAt: now, disruptionsUpdatedAt: now, weatherUpdatedAt: now),
-                weather: .init(raining: true, rainIntensity: 0.3, walkingPenaltyMinutes: 2),
+                weather: .init(raining: true, rainIntensity: 0.3, walkingPenaltyMinutes: 2, rainEndsAt: nil),
                 disruptions: [],
                 priorsVersion: "priors-v0.3.2",
                 weights: .init(alphaVariance: 0.7, betaChanges: 2.0, gammaWalking: 0.3, deltaComfort: 1.0)

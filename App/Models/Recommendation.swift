@@ -126,6 +126,7 @@ public struct WeatherImpact: Codable, Equatable {
     public let raining: Bool
     public let rainIntensity: Double?        // 0–1
     public let walkingPenaltyMinutes: Int
+    public let rainEndsAt: Date?
 }
 
 public struct DisruptionImpact: Codable, Equatable {

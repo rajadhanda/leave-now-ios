@@ -29,7 +29,20 @@ final class RecommendationViewModel: ObservableObject {
         return r.context.habitualCommute ? "Your usual route is stable today." : "Familiar route suggested."
     }
 
-    var p50Text: String { rec.map { "ETA: \($0.variance.etaP50Minutes) min (P50)" } ?? "--" }
+    var p50Text: String {
+        guard let r = rec else { return "--" }
+        let base = "ETA: \(r.variance.etaP50Minutes) min (P50)"
+        let rainPenalty = r.inputs.weather.walkingPenaltyMinutes
+        if rainPenalty > 0 {
+            if let end = r.inputs.weather.rainEndsAt {
+                let df = DateFormatter()
+                df.dateFormat = "HH:mm"
+                return base + " (+\(rainPenalty)m due to rain, until \(df.string(from: end)))"
+            }
+            return base + " (+\(rainPenalty)m due to rain)"
+        }
+        return base
+    }
     var p90Text: String { rec.map { "Worst case: \($0.variance.etaP90Minutes) min (P90)" } ?? "--" }
 
     var confidenceText: String {
