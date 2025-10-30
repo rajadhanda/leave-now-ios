@@ -1,19 +1,15 @@
 import Foundation
 
-struct ETAEstimator {
-    let kRain: Double // default around 0.08
+public protocol ETAEstimator {
+    func baseETA(minutesForLegs: [Int]) -> Int
+    func applyWeatherPenalty(walkMinutes: Int, rainIntensity: Double?, k: Double) -> Int
+}
 
-    func adjustedWalkMinutes(walkMinutes: Int, rainIntensity: Double) -> Int {
-        let delta = Double(walkMinutes) * kRain * rainIntensity
-        return walkMinutes + Int(round(delta))
-    }
-
-    func estimate(plan: JourneyPlan, weather: Weather?) -> Int {
-        let base = plan.totalDurationMinutes
-        guard let weather = weather else { return base }
-        let walkBase = plan.walkMinutes
-        let walkAdjusted = adjustedWalkMinutes(walkMinutes: walkBase, rainIntensity: weather.precipitationMmPerHr)
-        let nonWalk = base - walkBase
-        return nonWalk + walkAdjusted
+public struct DefaultETAEstimator: ETAEstimator {
+    public init() {}
+    public func baseETA(minutesForLegs: [Int]) -> Int { minutesForLegs.reduce(0, +) }
+    public func applyWeatherPenalty(walkMinutes: Int, rainIntensity: Double?, k: Double) -> Int {
+        guard let r = rainIntensity else { return 0 }
+        return Int(round(Double(walkMinutes) * k * max(0.0, min(r, 1.0))))
     }
 }

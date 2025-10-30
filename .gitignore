@@ -1,3 +1,16 @@
+# Xcode / Swift
+DerivedData/
+*.xcworkspace/
+*.xcuserdatad/
+*.xcuserstate
+build/
+*.DS_Store
+
+# SwiftPM
+.build/
+
+# Secrets
+App/Support/Secrets.plist
 # -------- macOS cruft --------
 .DS_Store
 .AppleDouble
@@ -39,7 +52,6 @@ ENV/
 env/
 __pycache__/
 *.pyc
-to/
 
 # Node / Frontend
 node_modules/
