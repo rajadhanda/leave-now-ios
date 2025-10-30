@@ -24,11 +24,9 @@ protocol TransitServiceProtocol {
 final class TransitService: TransitServiceProtocol {
     private let session: URLSession = .shared
     private let base = URL(string: "https://api.tfl.gov.uk")!
-    private let appId: String
     private let appKey: String
 
-    init(appId: String, appKey: String) {
-        self.appId = appId
+    init(appKey: String) {
         self.appKey = appKey
     }
 
@@ -36,7 +34,6 @@ final class TransitService: TransitServiceProtocol {
         var comps = URLComponents(url: base.appendingPathComponent("/Journey/JourneyResults/\(origin)/to/\(destination)"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
             .init(name: "date", value: ISO8601DateFormatter().string(from: departure)),
-            .init(name: "app_id", value: appId),
             .init(name: "app_key", value: appKey)
         ]
         let (data, _) = try await session.data(from: comps.url!)
@@ -68,7 +65,6 @@ final class TransitService: TransitServiceProtocol {
     func fetchDisruptions() async throws -> [Disruption] {
         var comps = URLComponents(url: base.appendingPathComponent("/Line/Mode/tube,dlr,overground,elizabeth-line/Status"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
-            .init(name: "app_id", value: appId),
             .init(name: "app_key", value: appKey)
         ]
         let (data, _) = try await session.data(from: comps.url!)

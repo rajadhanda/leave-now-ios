@@ -24,7 +24,7 @@ graph TD
 3. Run on iOS 17+.
 
 ## Keys
-- `TFL_APP_ID`, `TFL_APP_KEY`
+- `TFL_APP_KEY`
 - `OPENWEATHER_API_KEY`
 
 ## CI
@@ -37,7 +37,7 @@ TBD (demo GIF using mocked data).
 - No keys in repo. No PII sent off-device. Local-only storage.
 
 ## Getting Keys
-- Create a TfL developer app to obtain `TFL_APP_ID` and `TFL_APP_KEY`.
+- Create a TfL developer app to obtain `TFL_APP_KEY`.
 - Create an OpenWeather account to obtain `OPENWEATHER_API_KEY`.
 
 ## Provide Secrets
