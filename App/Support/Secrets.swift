@@ -9,6 +9,7 @@ enum Secrets {
         return d
     }()
 
+    static var tflAppId: String { dict[Config.tflAppIdKey] as? String ?? "" }
     static var tflAppKey: String { dict[Config.tflAppKeyKey] as? String ?? "" }
     static var openWeatherKey: String { dict[Config.openWeatherKey] as? String ?? "" }
 }

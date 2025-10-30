@@ -1,26 +1,31 @@
 import Foundation
 
-struct DeterministicRecommendation {
-    let plan: JourneyPlan
-    let p50: Int
-    let p90: Int
-    let confidence: Double
-    let rationale: String
+public struct UtilityWeights {
+    public let alphaVariance: Double
+    public let betaChanges: Double
+    public let gammaWalking: Double
+    public let deltaComfort: Double
 }
 
-struct RecommenderV1 {
-    let etaEstimator: ETAEstimator
+public struct RouteScore {
+    public let utility: Double
+    public let p50: Int
+    public let p90: Int
+}
 
-    func recommend(plans: [JourneyPlan], weather: Weather?) -> DeterministicRecommendation? {
-        guard !plans.isEmpty else { return nil }
-        let scored = plans.map { plan -> (JourneyPlan, Int) in
-            (plan, etaEstimator.estimate(plan: plan, weather: weather))
-        }
-        let best = scored.min { $0.1 < $1.1 }!
-        let p50 = best.1
-        let p90 = best.1 // v1 deterministic; will expand in v2
-        let confidence = 1.0 // v1 deterministic placeholder
-        let rationale = ExplanationBuilder().rationale(p50: p50, p90: p90, changes: best.0.changes, rainDelta: best.0.walkMinutes == 0 ? 0 : 0, hasSevereDelaysOnKeyLeg: false, keyLineName: nil)
-        return DeterministicRecommendation(plan: best.0, p50: p50, p90: p90, confidence: confidence, rationale: rationale)
+public protocol Recommender {
+    func scoreRoute(p50: Int, p90: Int, changes: Int, walkingMinutes: Int, comfortBonus: Double, w: UtilityWeights) -> RouteScore
+}
+
+public struct DefaultRecommender: Recommender {
+    public init() {}
+    public func scoreRoute(p50: Int, p90: Int, changes: Int, walkingMinutes: Int, comfortBonus: Double, w: UtilityWeights) -> RouteScore {
+        let variance = max(0, p90 - p50)
+        let util = Double(p50)
+            + w.alphaVariance * Double(variance)
+            + w.betaChanges * Double(changes)
+            + w.gammaWalking * Double(walkingMinutes)
+            - w.deltaComfort * comfortBonus
+        return .init(utility: util, p50: p50, p90: p90)
     }
 }

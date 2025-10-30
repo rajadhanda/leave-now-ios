@@ -1,71 +1,43 @@
-# Leave Now? iOS App
+# Leave Now? — Commute Decision Engine (iOS)
 
-If I leave right now, what’s the best way to get to my destination?
+**Purpose:** Provide confident, low-friction, personalised recommendations on **when to leave** and **which familiar route to take**, based on current conditions, routine patterns, and journey stability. We solve **timing confidence**, not navigation.
 
-## Platforms
-- iOS 17+ (SwiftUI, Combine, async/await)
+## Differentiation (vs Citymapper / Google Maps)
 
-## Architecture
-```mermaid
-graph TD
-  A[UI] --> B[Engine]
-  B --> C[Services]
-  C --> C1[TransitService]
-  C --> C2[MapsService]
-  C --> C3[WeatherService]
-  B --> D[Store]
-  D --> D1[TripHistoryStore]
-  A --> D
-```
+| Feature | Citymapper / Google | Leave Now? |
 
-## Setup
-1. Create `App/Support/Secrets.plist` by copying `App/Support/Secrets.plist.example` and adding your keys.
-2. Open the Xcode project (to be generated) and set the bundle identifiers and Signing.
-3. Run on iOS 17+.
+| --- | --- | --- |
 
-## Keys
-- `TFL_APP_KEY`
-- `OPENWEATHER_API_KEY`
+| Route exploration | ✅ | ❌ Out of scope |
 
-## CI
-See `.github/workflows/ci.yml`.
+| Carriage / exits | ✅ | ❌ Out of scope |
 
-## Screenshots
-TBD (demo GIF using mocked data).
+| Platform numbers | ✅ | ✅ (only when relevant) |
 
-## Limitations
-- No keys in repo. No PII sent off-device. Local-only storage.
+| Weather-adjusted walking | ❌ | ✅ |
 
-## Getting Keys
-- Create a TfL developer app to obtain `TFL_APP_KEY`.
-- Create an OpenWeather account to obtain `OPENWEATHER_API_KEY`.
+| Reliability / variance (P50/P90) | ❌ | **✅ Core** |
 
-## Provide Secrets
-- Copy `App/Support/Secrets.plist.example` to `App/Support/Secrets.plist`.
-- Fill in your keys. The app reads at runtime via `Secrets`.
+| Personal walking/transfer calibration | ❌ | **✅ Learns** |
 
-## Acceptance Tests (Engine)
-- Prefer lower P50 when spreads similar.
-- Prefer lower variance when P50 within 2 minutes.
-- Rain increases walking penalty (≥ +1m on 20m walk @ default k_rain).
-- Low confidence when (P90−P50)/P50 ≥ 0.25.
-- Ignore disruptions not intersecting leg lines/stations.
+| Proactive “leave now” timing | ❌ | **✅ Primary** |
 
-## Demo
-- The default build uses a mocked backtest harness to produce a deterministic demo in the UI.
+## Core Screens
 
-## Roadmap (Post-V1)
-- Home Screen widget with live "Leave in X min" + confidence.
-- Watch app for quick confirm.
-- Optional server proxy for rate limits + caching; weekly priors.
+- **Primary (active open):** One recommendation card (P50, P90, confidence, rationale) + optional fallback.
 
+- **Passive (notification):** “Leave now / wait / switch” with one-line reason.
 
-## Generate Xcode project (XcodeGen)
-1. Install XcodeGen: `brew install xcodegen`
-2. Generate project: `xcodegen generate`
-3. Open `LeaveNow.xcodeproj` and run the app.
-4. Copy `App/Support/Secrets.plist.example` to `App/Support/Secrets.plist` and add keys.
+## Build
 
-Schemes:
-- LeaveNow-Debug (MOCK_DATA=YES)
-- LeaveNow-Release (MOCK_DATA=NO)
+- iOS 17+, SwiftUI, async/await, Combine
+
+- Services: TfL Unified API (journeys + disruptions), Apple MapKit (walking ETA), OpenWeather
+
+- Engine: ETA estimator + Monte Carlo uncertainty + utility scoring
+
+- Storage: Core Data or SQLite (trip outcomes + calibration)
+
+- Privacy: On-device; no analytics; secrets via `Secrets.plist` (not in repo)
+
+See [`PRODUCT_CHARTER.md`](PRODUCT_CHARTER.md) for the product doctrine.
