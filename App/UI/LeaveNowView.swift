@@ -27,11 +27,20 @@ struct LeaveNowView: View {
 
     private func refresh() async {
         do {
-            // 1) Geocode hardcoded postcodes (demo)
-            let geocoder = GeocodingHelper()
-            async let oCoord = geocoder.geocode(postcode: DemoConfig.originPostcode)
-            async let dCoord = geocoder.geocode(postcode: DemoConfig.destinationPostcode)
-            let (originCoord, destCoord) = try await (oCoord, dCoord)
+            // 1) Resolve coordinates quickly (prefer DemoConfig fast map; fallback to geocoder)
+            let originCoord: CLLocationCoordinate2D
+            let destCoord: CLLocationCoordinate2D
+            if let o = DemoConfig.coords(for: DemoConfig.originPostcode), let d = DemoConfig.coords(for: DemoConfig.destinationPostcode) {
+                originCoord = .init(latitude: o.lat, longitude: o.lon)
+                destCoord = .init(latitude: d.lat, longitude: d.lon)
+            } else {
+                let geocoder = GeocodingHelper()
+                async let oCoord = geocoder.geocode(postcode: DemoConfig.originPostcode)
+                async let dCoord = geocoder.geocode(postcode: DemoConfig.destinationPostcode)
+                let (o, d) = try await (oCoord, dCoord)
+                originCoord = o
+                destCoord = d
+            }
 
             // 2) Fetch journey plans from TfL
             let tfl = TflTransitService()
@@ -70,6 +79,24 @@ struct LeaveNowView: View {
                 let lines = best.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
                 return lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
             }()
+            // Enrichment strings for stations/platforms
+            let tubeStartStation: String? = best.plan.legs.first(where: { $0.mode == .tube })?.fromStation
+            let railPlatformInfo: String? = railMeta.flatMap { meta in
+                let timeFmt: DateFormatter = {
+                    let df = DateFormatter()
+                    df.dateFormat = "HH:mm"
+                    return df
+                }()
+                let timeStr = meta.departure.estimatedTime.map(timeFmt.string) ?? timeFmt.string(from: meta.departure.plannedTime)
+                let plat = meta.departure.platform.map { "Platform \($0)" } ?? "Platform TBC"
+                return "National Rail: Euston → Milton Keynes Central, depart \(timeStr), \(plat)"
+            }
+            let platformHintCombined: String? = {
+                var parts: [String] = []
+                if let s = tubeStartStation { parts.append("Tube from: \(s)") }
+                if let rail = railPlatformInfo { parts.append(rail) }
+                return parts.isEmpty ? nil : parts.joined(separator: " • ")
+            }()
             let routeSummary: [RouteLegSummary] = best.plan.legs.map { leg in
                 RouteLegSummary(type: mapMode(leg.mode), lineOrService: leg.lineId, approxMinutes: leg.durationMinutes)
             }
@@ -95,7 +122,7 @@ struct LeaveNowView: View {
                     legs: routeSummary,
                     changes: best.plan.changes,
                     walkingMinutes: best.plan.walkMinutes,
-                    platformHint: railMeta?.departure.platform,
+                    platformHint: platformHintCombined,
                     comfort: .minimalWalking
                 ),
                 fallback: fallbackSummary.map { fs in

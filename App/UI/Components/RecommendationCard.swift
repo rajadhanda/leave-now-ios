@@ -33,6 +33,12 @@ struct RecommendationCard: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            if let hint = vm.rec?.route.platformHint, !hint.isEmpty {
+                Divider()
+                Text(hint)
+                    .font(.subheadline)
+            }
+
             if vm.hasFallback {
                 Button {
                     // Expand fallback overlay (to implement)

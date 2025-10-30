@@ -39,13 +39,33 @@ struct RecommenderV2 {
                 }
             }
         }
+        func baselinePriors(for plan: JourneyPlan) -> [DelayPrior] {
+            var priors: [DelayPrior] = []
+            // Add small variability for each non-walk leg
+            for leg in plan.legs where leg.mode != .walk {
+                switch leg.mode {
+                case .tube: priors.append(DelayPrior(meanMin: 1.5, stdMin: 1.0))
+                case .bus: priors.append(DelayPrior(meanMin: 3.0, stdMin: 2.0))
+                case .overground: priors.append(DelayPrior(meanMin: 2.0, stdMin: 1.5))
+                case .dlr: priors.append(DelayPrior(meanMin: 1.5, stdMin: 1.0))
+                case .nationalRail: priors.append(DelayPrior(meanMin: 4.0, stdMin: 3.0))
+                case .walk: break
+                }
+            }
+            // Transfers add variability
+            if plan.changes > 0 {
+                priors.append(DelayPrior(meanMin: Double(plan.changes) * 2.0, stdMin: Double(plan.changes) * 1.0))
+            }
+            return priors
+        }
         let scored: [(JourneyPlan, Int, Int, Double, Double)] = plans.map { plan in
             let base = estimator.baseETA(minutesForLegs: plan.legs.map { $0.durationMinutes })
             let rainDelta = estimator.applyWeatherPenalty(walkMinutes: plan.walkMinutes, rainIntensity: weather?.precipitationMmPerHr, k: kRain)
+            let allPriors = baselinePriors(for: plan) + priorsFor(disruptions: disruptions)
             let (p50, p90) = model.simulateETADistribution(baseMinutes: base + rainDelta,
-                                                           priors: priorsFor(disruptions: disruptions),
+                                                           priors: allPriors,
                                                            samples: samples)
-            let conf = max(0.0, min(1.0, 1.0 - Double(p90 - p50) / 30.0))
+            let conf = max(0.0, min(1.0, 1.0 - Double(p90 - p50) / 40.0))
             let util = score(p50: p50, p90: p90, changes: plan.changes, walkMinutes: plan.walkMinutes, comfortBonus: 0)
             return (plan, p50, p90, conf, util)
         }
