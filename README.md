@@ -41,3 +41,13 @@
 - Privacy: On-device; no analytics; secrets via `Secrets.plist` (not in repo)
 
 See [`PRODUCT_CHARTER.md`](PRODUCT_CHARTER.md) for the product doctrine.
+
+### National Rail (UK) Integration
+
+This app can enrich rail legs with platform + basic service timing via a pluggable provider.
+
+- Default: **disabled** (no provider).
+- Optional: **Realtime Trains** — add `REALTIMETRAINS_BASE_URL` and `REALTIMETRAINS_API_KEY` to `Info.plist` (consumed via `Secrets.plist` at build).
+- Fallbacks (future): Darwin OpenLDBWS or TransportAPI can implement `NationalRailService` without changing the rest of the app.
+
+> Note: The current RTT implementation is a tolerant placeholder; update endpoint paths and DTO keys once you have provider docs.
