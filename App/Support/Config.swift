@@ -7,12 +7,12 @@ enum RailProvider {
 
 enum AppConfig {
     static var railProvider: RailProvider {
-        if Secrets.realtimeTrainsApiKey != nil { return .realtimeTrains }
+        if RTTSecrets.realtimeTrainsApiKey != nil { return .realtimeTrains }
         return .none
     }
 }
 
-enum Secrets {
+enum RTTSecrets {
     static var realtimeTrainsBaseURL: URL? {
         guard let s = Bundle.main.object(forInfoDictionaryKey: "REALTIMETRAINS_BASE_URL") as? String,
               let url = URL(string: s) else { return nil }

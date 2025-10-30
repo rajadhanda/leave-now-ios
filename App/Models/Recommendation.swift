@@ -162,13 +162,3 @@ public struct OutcomeEvent: Identifiable, Codable, Equatable {
 public enum ArrivalJudgement: String, Codable { case earlier, asExpected, later }
 
 public enum DeviationIntent: String, Codable { case intentional, unintentional }
-
-import Foundation
-
-struct Recommendation {
-    let plan: JourneyPlan
-    let p50Minutes: Int
-    let p90Minutes: Int
-    let confidence: Double
-    let rationale: String
-}
