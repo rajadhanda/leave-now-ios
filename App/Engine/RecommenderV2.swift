@@ -1,8 +1,16 @@
 import Foundation
 
+struct SimpleRecommendation {
+    let plan: JourneyPlan
+    let p50Minutes: Int
+    let p90Minutes: Int
+    let confidence: Double
+    let rationale: String
+}
+
 struct RecommendationResult {
-    let best: Recommendation
-    let fallback: Recommendation?
+    let best: SimpleRecommendation
+    let fallback: SimpleRecommendation?
 }
 
 struct RecommenderV2 {
@@ -28,8 +36,21 @@ struct RecommenderV2 {
             return (plan, q.p50, q.p90, conf, util)
         }
         let sorted = scored.sorted { $0.4 < $1.4 }
-        func toRec(_ tup: (JourneyPlan, Int, Int, Double, Double)) -> Recommendation {
-            Recommendation(plan: tup.0, p50Minutes: tup.1, p90Minutes: tup.2, confidence: tup.3, rationale: ExplanationBuilder().rationale(p50: tup.1, p90: tup.2, changes: tup.0.changes, rainDelta: 0, hasSevereDelaysOnKeyLeg: false, keyLineName: nil))
+        func toRec(_ tup: (JourneyPlan, Int, Int, Double, Double)) -> SimpleRecommendation {
+            SimpleRecommendation(
+                plan: tup.0,
+                p50Minutes: tup.1,
+                p90Minutes: tup.2,
+                confidence: tup.3,
+                rationale: ExplanationBuilder().rationale(
+                    p50: tup.1,
+                    p90: tup.2,
+                    changes: tup.0.changes,
+                    rainDelta: 0,
+                    hasSevereDelaysOnKeyLeg: false,
+                    keyLineName: nil
+                )
+            )
         }
         let best = toRec(sorted[0])
         let fallback = sorted.count > 1 ? toRec(sorted[1]) : nil

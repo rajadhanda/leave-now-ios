@@ -1,7 +1,7 @@
 import Foundation
 
 public protocol TripHistoryStore {
-    func save(outcome: OutcomeEvent) throws
+    mutating func save(outcome: OutcomeEvent) throws
     func recentOutcomes(limit: Int) throws -> [OutcomeEvent]
 }
 

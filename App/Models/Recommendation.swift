@@ -163,12 +163,5 @@ public enum ArrivalJudgement: String, Codable { case earlier, asExpected, later 
 
 public enum DeviationIntent: String, Codable { case intentional, unintentional }
 
-import Foundation
-
-struct Recommendation {
-    let plan: JourneyPlan
-    let p50Minutes: Int
-    let p90Minutes: Int
-    let confidence: Double
-    let rationale: String
-}
+// Removed legacy duplicate `Recommendation` model to avoid ambiguity with the
+// public API model defined at the top of this file.
