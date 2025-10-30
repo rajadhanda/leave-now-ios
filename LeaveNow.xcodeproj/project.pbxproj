@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -70,14 +70,14 @@
 		232716AB4D7885EC5DCD35A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23BE67D1EE96C0B24300BD87 /* ETAEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETAEstimatorTests.swift; sourceTree = "<group>"; };
 		2B11F2C7E5D9D6D30EA3D17D /* UserPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPrefs.swift; sourceTree = "<group>"; };
-		2C4E840C9018B4873333E31D /* LeaveNowTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeaveNowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C4E840C9018B4873333E31D /* LeaveNowTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LeaveNowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D36E74276B2D99F9460EA5E /* Recommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recommendation.swift; sourceTree = "<group>"; };
 		3B1FE661B8AB34E6D4E57A4E /* ExplanationBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplanationBuilderTests.swift; sourceTree = "<group>"; };
 		3BC8BE59FEACE7236F41232B /* LeaveNowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaveNowView.swift; sourceTree = "<group>"; };
 		3DACBA925407E8BFFD41329C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4272D616BCD2038A4FB3155B /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Secrets.plist; sourceTree = "<group>"; };
 		46EAF1774B23EC95B52BE3DF /* ETAEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETAEstimator.swift; sourceTree = "<group>"; };
-		4CF121D705C92F572B90B29D /* Leave Now?.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Leave Now?.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF121D705C92F572B90B29D /* LeaveNow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LeaveNow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50F328BA049F525B891F0C0D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		586AA68D0BD5BA8086CB4C08 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		587037DA9503CFCB3093A8AE /* RouteMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapper.swift; sourceTree = "<group>"; };
@@ -87,7 +87,7 @@
 		842161B7BAAC39CC44D3C81F /* ExplanationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplanationBuilder.swift; sourceTree = "<group>"; };
 		92C69833B191792E08C658CC /* TransitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitService.swift; sourceTree = "<group>"; };
 		937A330D89D6345D2550C3FA /* Weather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Weather.swift; sourceTree = "<group>"; };
-		941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Secrets.plist.example; sourceTree = "<group>"; };
+		941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */ = {isa = PBXFileReference; path = Secrets.plist.example; sourceTree = "<group>"; };
 		A3A607EF71A0A54D2F13F6AF /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AC33FCCB8B361C3997765B70 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		AD050FB86C7C9F7478C610C7 /* UncertaintyModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModel.swift; sourceTree = "<group>"; };
@@ -152,7 +152,7 @@
 		8BBDB65B1D3985ECCAE99531 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4CF121D705C92F572B90B29D /* Leave Now?.app */,
+				4CF121D705C92F572B90B29D /* LeaveNow.app */,
 				2C4E840C9018B4873333E31D /* LeaveNowTests.xctest */,
 			);
 			name = Products;
@@ -276,7 +276,7 @@
 			packageProductDependencies = (
 			);
 			productName = LeaveNow;
-			productReference = 4CF121D705C92F572B90B29D /* Leave Now?.app */;
+			productReference = 4CF121D705C92F572B90B29D /* LeaveNow.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -286,7 +286,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					A52D321F68CEFEA3EF25508D = {
 						ProvisioningStyle = Automatic;
@@ -306,6 +306,7 @@
 			);
 			mainGroup = 9E0FAA5B99D645BE06BE8BDE;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -409,7 +410,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -445,7 +445,6 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -489,7 +488,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -525,7 +523,6 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -546,11 +543,6 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = (
-					"-interposable",
-					"-Xlinker",
-				);
-				"OTHER_LDFLAGS[arch=*]" = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.LeaveNow;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
