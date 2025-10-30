@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -16,11 +16,14 @@
 		32E56BCA55F2FF4F1C13C795 /* ExplanationBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B1FE661B8AB34E6D4E57A4E /* ExplanationBuilderTests.swift */; };
 		3BC95D50F4BF6A5BF9C2A52F /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4272D616BCD2038A4FB3155B /* Secrets.plist */; };
 		3F2F81F2F8BC06BE17F4EF1E /* ExplanationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 842161B7BAAC39CC44D3C81F /* ExplanationBuilder.swift */; };
+		4498551C9952FAD49458BA00 /* NationalRailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11DB2F736D7AF021338AE345 /* NationalRailService.swift */; };
 		4A0AEE296757DFF939EF4750 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC33FCCB8B361C3997765B70 /* LocationService.swift */; };
 		5F3CCB46496604614702C179 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDA1356C28FF6F6F6CDFA69 /* WeatherService.swift */; };
 		64341D956C661ED4252487F5 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 586AA68D0BD5BA8086CB4C08 /* HistoryView.swift */; };
 		6E2800606CD09E6D1794AA99 /* RecommenderV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7740F7261C2BE6DF3BE65BB7 /* RecommenderV2.swift */; };
+		701BC9F9B5C8D51CA83372DD /* RealtimeTrainsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B1F3F4EE2635D9B80CB912 /* RealtimeTrainsService.swift */; };
 		707B377BDF78E4CC56C156C8 /* LeaveNowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189A26B93EFCE077F713BF4D /* LeaveNowApp.swift */; };
+		77FC75B12D50616EC560430D /* RouteMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 587037DA9503CFCB3093A8AE /* RouteMapper.swift */; };
 		7CB7A2189C23553D1B286C3E /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD6FCC5650B755876C1D5FB6 /* Config.swift */; };
 		7F891AA2D390B23F7EC876C6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DACBA925407E8BFFD41329C /* SettingsView.swift */; };
 		93CB880F45B33BA23B5F7AF0 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A607EF71A0A54D2F13F6AF /* Secrets.swift */; };
@@ -29,6 +32,7 @@
 		B05BE2F8E3A8C96FDF7A9C6F /* MapsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1D4EB79CD7D7CD59368EAB /* MapsService.swift */; };
 		B116E06CBC7DC001F68230D3 /* RecommenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0799E4E9F8849780821B9D1D /* RecommenderTests.swift */; };
 		C3429B97B6A9A91924962173 /* Recommender.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA711E927EC04140DF8D1AAE /* Recommender.swift */; };
+		CB288580D476E43F0FAF2F51 /* RealtimeTrainsDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14CAD1B3CF3CA723F4E45456 /* RealtimeTrainsDecodingTests.swift */; };
 		CE95DC519014977FC1CC0387 /* TransitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C69833B191792E08C658CC /* TransitService.swift */; };
 		D367CF8A1FD7315643116154 /* DestinationPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38794FDCBDF8FB41531D4AA /* DestinationPicker.swift */; };
 		D49FB1AC45A76B7E5BDB3570 /* Disruption.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5AEEA9A65143B4E3074F567 /* Disruption.swift */; };
@@ -41,6 +45,7 @@
 		F0A676185770BECFD2AE2939 /* RouteLeg.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1763DC7A08ACEA21783E735F /* RouteLeg.swift */; };
 		F1CA051F04390745212C3FBF /* UncertaintyModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD050FB86C7C9F7478C610C7 /* UncertaintyModel.swift */; };
 		F7D60A8CA557C51EFC8EC9D5 /* Recommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D36E74276B2D99F9460EA5E /* Recommendation.swift */; };
+		FC9E3767B26C5E21F6B8245C /* TransitAggregation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,7 +60,9 @@
 
 /* Begin PBXFileReference section */
 		0799E4E9F8849780821B9D1D /* RecommenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommenderTests.swift; sourceTree = "<group>"; };
+		11DB2F736D7AF021338AE345 /* NationalRailService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NationalRailService.swift; sourceTree = "<group>"; };
 		12D738198272E9772F352B97 /* TripHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripHistoryStore.swift; sourceTree = "<group>"; };
+		14CAD1B3CF3CA723F4E45456 /* RealtimeTrainsDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeTrainsDecodingTests.swift; sourceTree = "<group>"; };
 		162A95AE087BA049F55510DA /* BacktestHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacktestHarness.swift; sourceTree = "<group>"; };
 		1763DC7A08ACEA21783E735F /* RouteLeg.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteLeg.swift; sourceTree = "<group>"; };
 		189A26B93EFCE077F713BF4D /* LeaveNowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaveNowApp.swift; sourceTree = "<group>"; };
@@ -70,16 +77,17 @@
 		3DACBA925407E8BFFD41329C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4272D616BCD2038A4FB3155B /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Secrets.plist; sourceTree = "<group>"; };
 		46EAF1774B23EC95B52BE3DF /* ETAEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETAEstimator.swift; sourceTree = "<group>"; };
-		4CF121D705C92F572B90B29D /* Leave Now?.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Leave Now?.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF121D705C92F572B90B29D /* LeaveNow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LeaveNow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50F328BA049F525B891F0C0D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		586AA68D0BD5BA8086CB4C08 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		587037DA9503CFCB3093A8AE /* RouteMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapper.swift; sourceTree = "<group>"; };
 		6FDA1356C28FF6F6F6CDFA69 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		7740F7261C2BE6DF3BE65BB7 /* RecommenderV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommenderV2.swift; sourceTree = "<group>"; };
 		8374F3EF5E8BFF2ADD5E9E87 /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
 		842161B7BAAC39CC44D3C81F /* ExplanationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplanationBuilder.swift; sourceTree = "<group>"; };
 		92C69833B191792E08C658CC /* TransitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitService.swift; sourceTree = "<group>"; };
 		937A330D89D6345D2550C3FA /* Weather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Weather.swift; sourceTree = "<group>"; };
-		941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Secrets.plist.example; sourceTree = "<group>"; };
+		941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */ = {isa = PBXFileReference; path = Secrets.plist.example; sourceTree = "<group>"; };
 		A3A607EF71A0A54D2F13F6AF /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AC33FCCB8B361C3997765B70 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		AD050FB86C7C9F7478C610C7 /* UncertaintyModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModel.swift; sourceTree = "<group>"; };
@@ -88,6 +96,8 @@
 		C375549C5E0857A858E3A5A4 /* JourneyPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyPlan.swift; sourceTree = "<group>"; };
 		C5AEEA9A65143B4E3074F567 /* Disruption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Disruption.swift; sourceTree = "<group>"; };
 		D38794FDCBDF8FB41531D4AA /* DestinationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationPicker.swift; sourceTree = "<group>"; };
+		D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitAggregation.swift; sourceTree = "<group>"; };
+		E3B1F3F4EE2635D9B80CB912 /* RealtimeTrainsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeTrainsService.swift; sourceTree = "<group>"; };
 		EA711E927EC04140DF8D1AAE /* Recommender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recommender.swift; sourceTree = "<group>"; };
 		ED760F94B8585E1894525956 /* RecommendationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationCard.swift; sourceTree = "<group>"; };
 		FD60E32A0B2D7802239F9C47 /* RecommendationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationViewModel.swift; sourceTree = "<group>"; };
@@ -130,6 +140,9 @@
 			children = (
 				AC33FCCB8B361C3997765B70 /* LocationService.swift */,
 				1A1D4EB79CD7D7CD59368EAB /* MapsService.swift */,
+				11DB2F736D7AF021338AE345 /* NationalRailService.swift */,
+				E3B1F3F4EE2635D9B80CB912 /* RealtimeTrainsService.swift */,
+				D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */,
 				92C69833B191792E08C658CC /* TransitService.swift */,
 				6FDA1356C28FF6F6F6CDFA69 /* WeatherService.swift */,
 			);
@@ -139,7 +152,7 @@
 		8BBDB65B1D3985ECCAE99531 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4CF121D705C92F572B90B29D /* Leave Now?.app */,
+				4CF121D705C92F572B90B29D /* LeaveNow.app */,
 				2C4E840C9018B4873333E31D /* LeaveNowTests.xctest */,
 			);
 			name = Products;
@@ -164,6 +177,7 @@
 			children = (
 				23BE67D1EE96C0B24300BD87 /* ETAEstimatorTests.swift */,
 				3B1FE661B8AB34E6D4E57A4E /* ExplanationBuilderTests.swift */,
+				14CAD1B3CF3CA723F4E45456 /* RealtimeTrainsDecodingTests.swift */,
 				0799E4E9F8849780821B9D1D /* RecommenderTests.swift */,
 				BF7D5421E0E84167815DC6D7 /* UncertaintyModelTests.swift */,
 			);
@@ -199,6 +213,7 @@
 				842161B7BAAC39CC44D3C81F /* ExplanationBuilder.swift */,
 				EA711E927EC04140DF8D1AAE /* Recommender.swift */,
 				7740F7261C2BE6DF3BE65BB7 /* RecommenderV2.swift */,
+				587037DA9503CFCB3093A8AE /* RouteMapper.swift */,
 				AD050FB86C7C9F7478C610C7 /* UncertaintyModel.swift */,
 			);
 			path = Engine;
@@ -261,7 +276,7 @@
 			packageProductDependencies = (
 			);
 			productName = LeaveNow;
-			productReference = 4CF121D705C92F572B90B29D /* Leave Now?.app */;
+			productReference = 4CF121D705C92F572B90B29D /* LeaveNow.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -291,6 +306,7 @@
 			);
 			mainGroup = 9E0FAA5B99D645BE06BE8BDE;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -320,6 +336,7 @@
 			files = (
 				1742D71030D0A37624C5B859 /* ETAEstimatorTests.swift in Sources */,
 				32E56BCA55F2FF4F1C13C795 /* ExplanationBuilderTests.swift in Sources */,
+				CB288580D476E43F0FAF2F51 /* RealtimeTrainsDecodingTests.swift in Sources */,
 				B116E06CBC7DC001F68230D3 /* RecommenderTests.swift in Sources */,
 				E67E3BF40210CD34A46BE31B /* UncertaintyModelTests.swift in Sources */,
 			);
@@ -342,14 +359,18 @@
 				E543512B81A9E36925190016 /* LeaveNowView.swift in Sources */,
 				4A0AEE296757DFF939EF4750 /* LocationService.swift in Sources */,
 				B05BE2F8E3A8C96FDF7A9C6F /* MapsService.swift in Sources */,
+				4498551C9952FAD49458BA00 /* NationalRailService.swift in Sources */,
+				701BC9F9B5C8D51CA83372DD /* RealtimeTrainsService.swift in Sources */,
 				F7D60A8CA557C51EFC8EC9D5 /* Recommendation.swift in Sources */,
 				2234F7AF79411C10E6A4CD01 /* RecommendationCard.swift in Sources */,
 				27F318F3CC7E2B2B81731E82 /* RecommendationViewModel.swift in Sources */,
 				C3429B97B6A9A91924962173 /* Recommender.swift in Sources */,
 				6E2800606CD09E6D1794AA99 /* RecommenderV2.swift in Sources */,
 				F0A676185770BECFD2AE2939 /* RouteLeg.swift in Sources */,
+				77FC75B12D50616EC560430D /* RouteMapper.swift in Sources */,
 				93CB880F45B33BA23B5F7AF0 /* Secrets.swift in Sources */,
 				7F891AA2D390B23F7EC876C6 /* SettingsView.swift in Sources */,
+				FC9E3767B26C5E21F6B8245C /* TransitAggregation.swift in Sources */,
 				CE95DC519014977FC1CC0387 /* TransitService.swift in Sources */,
 				EB9B05EE47725526BEFE5F98 /* TripHistoryStore.swift in Sources */,
 				F1CA051F04390745212C3FBF /* UncertaintyModel.swift in Sources */,
@@ -451,7 +472,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 3C2VKX28YL;
 				INFOPLIST_FILE = App/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -551,7 +571,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 3C2VKX28YL;
 				INFOPLIST_FILE = App/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
