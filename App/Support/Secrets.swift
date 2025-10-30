@@ -12,4 +12,6 @@ enum Secrets {
     static var tflAppId: String { dict[Config.tflAppIdKey] as? String ?? "" }
     static var tflAppKey: String { dict[Config.tflAppKeyKey] as? String ?? "" }
     static var openWeatherKey: String { dict[Config.openWeatherKey] as? String ?? "" }
+    static var rttUsername: String { dict[Config.rttUsernameKey] as? String ?? "" }
+    static var rttPassword: String { dict[Config.rttPasswordKey] as? String ?? "" }
 }
