@@ -39,6 +39,7 @@ ENV/
 env/
 __pycache__/
 *.pyc
+to/
 
 # Node / Frontend
 node_modules/
@@ -55,3 +56,4 @@ build/
 # Misc
 *.swp
 *.swo
+App/Support/Secrets.plist
