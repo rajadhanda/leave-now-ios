@@ -1,22 +1,57 @@
-# Xcode
-*.xcworkspace/
-*.xcuserstate
-xcuserdata/
+# -------- macOS cruft --------
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# -------- Xcode / iOS --------
 DerivedData/
 build/
-*.xcdatamodeld/*.xccurrentversion
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
 
 # Swift Package Manager
-/.build/
-/Packages/
-Package.pins
+.build/
+Packages/
+Package.resolved
 
-# SwiftLint cache
-.swiftlint.yml
-.swiftlint.cache
+# CocoaPods (keep Podfile + Podfile.lock; ignore the Pods dir unless you deliberately vendor it)
+Pods/
 
-# Secrets (real)
-App/Support/Secrets.plist
+# Carthage
+Carthage/Build/
 
-# macOS
-.DS_Store
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# -------- General dev junk --------
+# Python
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.pyc
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.next/
+.out/
+*.log
+
+# Editors/IDE
+.vscode/
+.idea/
+
+# Misc
+*.swp
+*.swo
