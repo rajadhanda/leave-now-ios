@@ -1,8 +1,13 @@
-import Foundation
+import XCTest
 
-func testConfidenceDropsWithHigherSpread() {
-    let model = UncertaintyModel(draws: 500)
-    let lowConf = model.confidence(p50: 20, p90: 30)
-    let highConf = model.confidence(p50: 20, p90: 22)
-    assert(highConf > lowConf)
+@testable import LeaveNow
+
+final class UncertaintyModelTests: XCTestCase {
+    func testMonteCarloProducesOrderedP50P90() {
+        let mc = MonteCarloUncertainty()
+        let (p50, p90) = mc.simulateETADistribution(baseMinutes: 30,
+                                                    priors: [.init(meanMin: 5, stdMin: 2)],
+                                                    samples: 1000)
+        XCTAssertGreaterThanOrEqual(p90, p50)
+    }
 }
