@@ -22,9 +22,12 @@ public struct MonteCarloUncertainty: UncertaintyModel {
                 // Box-Muller normal sample
                 let u1 = Double.random(in: 0..<1), u2 = Double.random(in: 0..<1)
                 let z0 = sqrt(-2.0 * log(u1)) * cos(2 * .pi * u2)
-                delay += max(0, p.meanMin + z0 * p.stdMin)
+                // Don't clamp intermediate delays - allows symmetric distribution
+                // This prevents right-skew that inflates P50 above the mean
+                delay += p.meanMin + z0 * p.stdMin
             }
-            totals.append(Double(baseMinutes) + delay)
+            // Only clamp the final result to prevent negative total travel times
+            totals.append(max(0, Double(baseMinutes) + delay))
         }
         let sorted = totals.sorted()
         let p50 = Int(round(sorted[Int(Double(samples) * 0.5)]))

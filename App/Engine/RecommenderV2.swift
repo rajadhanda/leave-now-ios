@@ -43,13 +43,15 @@ struct RecommenderV2 {
             var priors: [DelayPrior] = []
             var trafficIndex = 0
             // Add small variability for each non-walk leg
+            // Reduced variability values to align ETA more closely with Google Maps
+            // (Fixed right-skew bug means we can use lower std dev values)
             for leg in plan.legs where leg.mode != .walk {
                 switch leg.mode {
-                case .tube: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.0))
-                case .bus: priors.append(DelayPrior(meanMin: 0.0, stdMin: 2.0))
-                case .overground: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.5))
-                case .dlr: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.0))
-                case .nationalRail: priors.append(DelayPrior(meanMin: 0.0, stdMin: 3.0))
+                case .tube: priors.append(DelayPrior(meanMin: 0.0, stdMin: 0.5))
+                case .bus: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.5))
+                case .overground: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.0))
+                case .dlr: priors.append(DelayPrior(meanMin: 0.0, stdMin: 0.5))
+                case .nationalRail: priors.append(DelayPrior(meanMin: 0.0, stdMin: 2.0))
                 case .car:
                     // Car legs have traffic-dependent variability
                     if trafficIndex < trafficInfo.count {
@@ -80,9 +82,9 @@ struct RecommenderV2 {
                 case .walk: break
                 }
             }
-            // Transfers add variability
+            // Transfers add variability (reduced from 1.0 to 0.75 per change)
             if plan.changes > 0 {
-                priors.append(DelayPrior(meanMin: 0.0, stdMin: Double(plan.changes) * 1.0))
+                priors.append(DelayPrior(meanMin: 0.0, stdMin: Double(plan.changes) * 0.75))
             }
             return priors
         }
