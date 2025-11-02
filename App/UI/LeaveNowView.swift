@@ -120,8 +120,8 @@ struct LeaveNowView: View {
             }
 
             // Determine departure decision (simplified - no longer using railMeta for optimization)
-            var decision: LeaveDecision = .leaveNow
-            var recommendedDeparture: Date? = now
+            let decision: LeaveDecision = .leaveNow
+            let recommendedDeparture: Date? = now
 
             let rec = Recommendation(
                 id: .init(),
