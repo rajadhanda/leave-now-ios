@@ -64,15 +64,21 @@ struct LeaveNowView: View {
                 }
             }
 
-            // 5) Score and select best/fallback
+            // 5) Fetch traffic data for car legs (if any)
+            let originGeo = GeoPoint(lat: originCoord.latitude, lon: originCoord.longitude)
+            let destGeo = GeoPoint(lat: destCoord.latitude, lon: destCoord.longitude)
+            let trafficAggregation = TrafficAggregation()
+            let trafficInfoByPlan = await trafficAggregation.fetchTrafficForPlans(plans, origin: originGeo, destination: destGeo, departureTime: Date())
+            
+            // 6) Score and select best/fallback
             let recV2 = RecommenderV2(kRain: UserPrefs.shared.rainSensitivity, alpha: 0.7, beta: 2.0, gamma: 0.3, delta: 1.0)
             let disruptions: [Disruption] = []
-            guard let result = recV2.recommend(plans: plans, weather: weather, disruptions: disruptions) else {
+            guard let result = recV2.recommend(plans: plans, weather: weather, disruptions: disruptions, trafficInfoByPlan: trafficInfoByPlan) else {
                 vm.bind(Self.mockRecommendation())
                 return
             }
 
-            // 6) Build UI Recommendation from engine result
+            // 7) Build UI Recommendation from engine result
             let now = Date()
             let best = result.best
             let fb = result.fallback
@@ -102,6 +108,7 @@ struct LeaveNowView: View {
                     case .overground: return "Overground"
                     case .dlr: return "DLR"
                     case .nationalRail: return "National Rail"
+                    case .car: return "Car"
                     case .walk: return "Walk"
                     }
                 }()
@@ -255,6 +262,7 @@ private func mapMode(_ mode: LegMode) -> LegType {
     case .overground: return .overground
     case .dlr: return .dlr
     case .nationalRail: return .rail
+    case .car: return .car
     }
 }
 

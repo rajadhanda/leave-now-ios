@@ -5,9 +5,21 @@ enum RailProvider {
     case none
 }
 
+enum TrafficProvider {
+    case here
+    case google
+    case none
+}
+
 enum AppConfig {
     static var railProvider: RailProvider {
         if RTTSecrets.realtimeTrainsApiKey != nil { return .realtimeTrains }
+        return .none
+    }
+    
+    static var trafficProvider: TrafficProvider {
+        if TrafficSecrets.hereApiKey != nil { return .here }
+        if TrafficSecrets.googleApiKey != nil { return .google }
         return .none
     }
 }
@@ -23,6 +35,16 @@ enum RTTSecrets {
     }
 }
 
+enum TrafficSecrets {
+    static var hereApiKey: String? {
+        Bundle.main.object(forInfoDictionaryKey: "HERE_API_KEY") as? String
+    }
+    
+    static var googleApiKey: String? {
+        Bundle.main.object(forInfoDictionaryKey: "GOOGLE_MAPS_API_KEY") as? String
+    }
+}
+
 import Foundation
 
 struct Config {
@@ -31,4 +53,6 @@ struct Config {
     static let openWeatherKey = "OPENWEATHER_API_KEY"
     static let rttUsernameKey = "REALTIMETRAINS_USERNAME"
     static let rttPasswordKey = "REALTIMETRAINS_PASSWORD"
+    static let hereApiKey = "HERE_API_KEY"
+    static let googleMapsApiKey = "GOOGLE_MAPS_API_KEY"
 }

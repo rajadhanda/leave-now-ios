@@ -49,6 +49,8 @@
 		A1D2E3F4B5C6978899AA0011 /* TflTransitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA000E /* TflTransitService.swift */; };
 		A1D2E3F4B5C6978899AA0012 /* Geocoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA000F /* Geocoding.swift */; };
 		A1D2E3F4B5C6978899AA0013 /* DemoConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA0010 /* DemoConfig.swift */; };
+		B2E3F5C6B7D8E9F0A1B2C3D4 /* TrafficService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E3F5C6B7D8E9F0A1B2C3D3 /* TrafficService.swift */; };
+		C3F4G6D7E8F9A0B1C2D3E4 /* TrafficAggregation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F4G6D7E8F9A0B1C2D3E3 /* TrafficAggregation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,6 +109,8 @@
 		A1D2E3F4B5C6978899AA000E /* TflTransitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TflTransitService.swift; sourceTree = "<group>"; };
 		A1D2E3F4B5C6978899AA000F /* Geocoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geocoding.swift; sourceTree = "<group>"; };
 		A1D2E3F4B5C6978899AA0010 /* DemoConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoConfig.swift; sourceTree = "<group>"; };
+		B2E3F5C6B7D8E9F0A1B2C3D3 /* TrafficService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficService.swift; sourceTree = "<group>"; };
+		C3F4G6D7E8F9A0B1C2D3E3 /* TrafficAggregation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficAggregation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -152,6 +156,8 @@
 				D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */,
 				92C69833B191792E08C658CC /* TransitService.swift */,
 				6FDA1356C28FF6F6F6CDFA69 /* WeatherService.swift */,
+				B2E3F5C6B7D8E9F0A1B2C3D3 /* TrafficService.swift */,
+				C3F4G6D7E8F9A0B1C2D3E3 /* TrafficAggregation.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -389,6 +395,8 @@
 				A1D2E3F4B5C6978899AA0011 /* TflTransitService.swift in Sources */,
 				A1D2E3F4B5C6978899AA0012 /* Geocoding.swift in Sources */,
 				A1D2E3F4B5C6978899AA0013 /* DemoConfig.swift in Sources */,
+				B2E3F5C6B7D8E9F0A1B2C3D4 /* TrafficService.swift in Sources */,
+				C3F4G6D7E8F9A0B1C2D3E4 /* TrafficAggregation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

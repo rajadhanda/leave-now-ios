@@ -1,6 +1,6 @@
 import Foundation
 
-enum LegMode: String { case walk, tube, bus, overground, dlr, nationalRail }
+enum LegMode: String { case walk, tube, bus, overground, dlr, nationalRail, car }
 
 struct RouteLeg: Identifiable {
     let id = UUID()
