@@ -9,14 +9,19 @@
 /* Begin PBXBuildFile section */
 		0C76C9B9EF62C5F47CA66793 /* JourneyPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C375549C5E0857A858E3A5A4 /* JourneyPlan.swift */; };
 		1742D71030D0A37624C5B859 /* ETAEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23BE67D1EE96C0B24300BD87 /* ETAEstimatorTests.swift */; };
+		17DA592D09FA450A8D4298F5 /* Geocoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF3F19239E96B123B08E341 /* Geocoding.swift */; };
+		18F508C9F63FD211D00F2238 /* TrafficAggregation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC55DA00E387D582B295C0AF /* TrafficAggregation.swift */; };
+		1955E621062DF053FFC1E0D1 /* DemoConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB798DA880F5AD78E2B8A6F /* DemoConfig.swift */; };
 		2234F7AF79411C10E6A4CD01 /* RecommendationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED760F94B8585E1894525956 /* RecommendationCard.swift */; };
 		22BE16AB4FAFBDE497112422 /* Secrets.plist.example in Resources */ = {isa = PBXBuildFile; fileRef = 941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */; };
 		2380397D22D3AF70F4FC8C67 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8374F3EF5E8BFF2ADD5E9E87 /* Errors.swift */; };
 		27F318F3CC7E2B2B81731E82 /* RecommendationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD60E32A0B2D7802239F9C47 /* RecommendationViewModel.swift */; };
 		32E56BCA55F2FF4F1C13C795 /* ExplanationBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B1FE661B8AB34E6D4E57A4E /* ExplanationBuilderTests.swift */; };
+		34F36C2ACB2DC01BC0FBC263 /* TflTransitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1A11D2943832785A4C9970 /* TflTransitService.swift */; };
 		3BC95D50F4BF6A5BF9C2A52F /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4272D616BCD2038A4FB3155B /* Secrets.plist */; };
 		3F2F81F2F8BC06BE17F4EF1E /* ExplanationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 842161B7BAAC39CC44D3C81F /* ExplanationBuilder.swift */; };
 		4498551C9952FAD49458BA00 /* NationalRailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11DB2F736D7AF021338AE345 /* NationalRailService.swift */; };
+		49514D671AF6DD71E786399F /* TrafficService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72E5DAC5011222FF6C1AE45 /* TrafficService.swift */; };
 		4A0AEE296757DFF939EF4750 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC33FCCB8B361C3997765B70 /* LocationService.swift */; };
 		5F3CCB46496604614702C179 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDA1356C28FF6F6F6CDFA69 /* WeatherService.swift */; };
 		64341D956C661ED4252487F5 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 586AA68D0BD5BA8086CB4C08 /* HistoryView.swift */; };
@@ -46,11 +51,6 @@
 		F1CA051F04390745212C3FBF /* UncertaintyModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD050FB86C7C9F7478C610C7 /* UncertaintyModel.swift */; };
 		F7D60A8CA557C51EFC8EC9D5 /* Recommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D36E74276B2D99F9460EA5E /* Recommendation.swift */; };
 		FC9E3767B26C5E21F6B8245C /* TransitAggregation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */; };
-		A1D2E3F4B5C6978899AA0011 /* TflTransitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA000E /* TflTransitService.swift */; };
-		A1D2E3F4B5C6978899AA0012 /* Geocoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA000F /* Geocoding.swift */; };
-		A1D2E3F4B5C6978899AA0013 /* DemoConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D2E3F4B5C6978899AA0010 /* DemoConfig.swift */; };
-		B2E3F5C6B7D8E9F0A1B2C3D4 /* TrafficService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E3F5C6B7D8E9F0A1B2C3D3 /* TrafficService.swift */; };
-		C3F4G6D7E8F9A0B1C2D3E4 /* TrafficAggregation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F4G6D7E8F9A0B1C2D3E3 /* TrafficAggregation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,6 +77,7 @@
 		2B11F2C7E5D9D6D30EA3D17D /* UserPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPrefs.swift; sourceTree = "<group>"; };
 		2C4E840C9018B4873333E31D /* LeaveNowTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LeaveNowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D36E74276B2D99F9460EA5E /* Recommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recommendation.swift; sourceTree = "<group>"; };
+		2EF3F19239E96B123B08E341 /* Geocoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geocoding.swift; sourceTree = "<group>"; };
 		3B1FE661B8AB34E6D4E57A4E /* ExplanationBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplanationBuilderTests.swift; sourceTree = "<group>"; };
 		3BC8BE59FEACE7236F41232B /* LeaveNowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaveNowView.swift; sourceTree = "<group>"; };
 		3DACBA925407E8BFFD41329C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -90,27 +91,26 @@
 		7740F7261C2BE6DF3BE65BB7 /* RecommenderV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommenderV2.swift; sourceTree = "<group>"; };
 		8374F3EF5E8BFF2ADD5E9E87 /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
 		842161B7BAAC39CC44D3C81F /* ExplanationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplanationBuilder.swift; sourceTree = "<group>"; };
+		8B1A11D2943832785A4C9970 /* TflTransitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TflTransitService.swift; sourceTree = "<group>"; };
 		92C69833B191792E08C658CC /* TransitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitService.swift; sourceTree = "<group>"; };
 		937A330D89D6345D2550C3FA /* Weather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Weather.swift; sourceTree = "<group>"; };
 		941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */ = {isa = PBXFileReference; path = Secrets.plist.example; sourceTree = "<group>"; };
 		A3A607EF71A0A54D2F13F6AF /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AC33FCCB8B361C3997765B70 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		AC55DA00E387D582B295C0AF /* TrafficAggregation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficAggregation.swift; sourceTree = "<group>"; };
 		AD050FB86C7C9F7478C610C7 /* UncertaintyModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModel.swift; sourceTree = "<group>"; };
 		AD6FCC5650B755876C1D5FB6 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		B72E5DAC5011222FF6C1AE45 /* TrafficService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficService.swift; sourceTree = "<group>"; };
 		BF7D5421E0E84167815DC6D7 /* UncertaintyModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModelTests.swift; sourceTree = "<group>"; };
 		C375549C5E0857A858E3A5A4 /* JourneyPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyPlan.swift; sourceTree = "<group>"; };
 		C5AEEA9A65143B4E3074F567 /* Disruption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Disruption.swift; sourceTree = "<group>"; };
+		CEB798DA880F5AD78E2B8A6F /* DemoConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoConfig.swift; sourceTree = "<group>"; };
 		D38794FDCBDF8FB41531D4AA /* DestinationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationPicker.swift; sourceTree = "<group>"; };
 		D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitAggregation.swift; sourceTree = "<group>"; };
 		E3B1F3F4EE2635D9B80CB912 /* RealtimeTrainsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeTrainsService.swift; sourceTree = "<group>"; };
 		EA711E927EC04140DF8D1AAE /* Recommender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recommender.swift; sourceTree = "<group>"; };
 		ED760F94B8585E1894525956 /* RecommendationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationCard.swift; sourceTree = "<group>"; };
 		FD60E32A0B2D7802239F9C47 /* RecommendationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationViewModel.swift; sourceTree = "<group>"; };
-		A1D2E3F4B5C6978899AA000E /* TflTransitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TflTransitService.swift; sourceTree = "<group>"; };
-		A1D2E3F4B5C6978899AA000F /* Geocoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geocoding.swift; sourceTree = "<group>"; };
-		A1D2E3F4B5C6978899AA0010 /* DemoConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoConfig.swift; sourceTree = "<group>"; };
-		B2E3F5C6B7D8E9F0A1B2C3D3 /* TrafficService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficService.swift; sourceTree = "<group>"; };
-		C3F4G6D7E8F9A0B1C2D3E3 /* TrafficAggregation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficAggregation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -152,12 +152,12 @@
 				1A1D4EB79CD7D7CD59368EAB /* MapsService.swift */,
 				11DB2F736D7AF021338AE345 /* NationalRailService.swift */,
 				E3B1F3F4EE2635D9B80CB912 /* RealtimeTrainsService.swift */,
-				A1D2E3F4B5C6978899AA000E /* TflTransitService.swift */,
+				8B1A11D2943832785A4C9970 /* TflTransitService.swift */,
+				AC55DA00E387D582B295C0AF /* TrafficAggregation.swift */,
+				B72E5DAC5011222FF6C1AE45 /* TrafficService.swift */,
 				D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */,
 				92C69833B191792E08C658CC /* TransitService.swift */,
 				6FDA1356C28FF6F6F6CDFA69 /* WeatherService.swift */,
-				B2E3F5C6B7D8E9F0A1B2C3D3 /* TrafficService.swift */,
-				C3F4G6D7E8F9A0B1C2D3E3 /* TrafficAggregation.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -210,12 +210,12 @@
 			isa = PBXGroup;
 			children = (
 				AD6FCC5650B755876C1D5FB6 /* Config.swift */,
+				CEB798DA880F5AD78E2B8A6F /* DemoConfig.swift */,
 				8374F3EF5E8BFF2ADD5E9E87 /* Errors.swift */,
+				2EF3F19239E96B123B08E341 /* Geocoding.swift */,
 				4272D616BCD2038A4FB3155B /* Secrets.plist */,
 				941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */,
 				A3A607EF71A0A54D2F13F6AF /* Secrets.swift */,
-				A1D2E3F4B5C6978899AA0010 /* DemoConfig.swift */,
-				A1D2E3F4B5C6978899AA000F /* Geocoding.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -363,11 +363,13 @@
 			files = (
 				DA1E3AE3F143CE3764B0F457 /* BacktestHarness.swift in Sources */,
 				7CB7A2189C23553D1B286C3E /* Config.swift in Sources */,
+				1955E621062DF053FFC1E0D1 /* DemoConfig.swift in Sources */,
 				D367CF8A1FD7315643116154 /* DestinationPicker.swift in Sources */,
 				D49FB1AC45A76B7E5BDB3570 /* Disruption.swift in Sources */,
 				EE3D18454F1A69F700D96C4B /* ETAEstimator.swift in Sources */,
 				2380397D22D3AF70F4FC8C67 /* Errors.swift in Sources */,
 				3F2F81F2F8BC06BE17F4EF1E /* ExplanationBuilder.swift in Sources */,
+				17DA592D09FA450A8D4298F5 /* Geocoding.swift in Sources */,
 				64341D956C661ED4252487F5 /* HistoryView.swift in Sources */,
 				0C76C9B9EF62C5F47CA66793 /* JourneyPlan.swift in Sources */,
 				707B377BDF78E4CC56C156C8 /* LeaveNowApp.swift in Sources */,
@@ -385,6 +387,9 @@
 				77FC75B12D50616EC560430D /* RouteMapper.swift in Sources */,
 				93CB880F45B33BA23B5F7AF0 /* Secrets.swift in Sources */,
 				7F891AA2D390B23F7EC876C6 /* SettingsView.swift in Sources */,
+				34F36C2ACB2DC01BC0FBC263 /* TflTransitService.swift in Sources */,
+				18F508C9F63FD211D00F2238 /* TrafficAggregation.swift in Sources */,
+				49514D671AF6DD71E786399F /* TrafficService.swift in Sources */,
 				FC9E3767B26C5E21F6B8245C /* TransitAggregation.swift in Sources */,
 				CE95DC519014977FC1CC0387 /* TransitService.swift in Sources */,
 				EB9B05EE47725526BEFE5F98 /* TripHistoryStore.swift in Sources */,
@@ -392,11 +397,6 @@
 				AFE6F47AB1084889EF1F7DA5 /* UserPrefs.swift in Sources */,
 				DB21185FB85490E2A366BFB1 /* Weather.swift in Sources */,
 				5F3CCB46496604614702C179 /* WeatherService.swift in Sources */,
-				A1D2E3F4B5C6978899AA0011 /* TflTransitService.swift in Sources */,
-				A1D2E3F4B5C6978899AA0012 /* Geocoding.swift in Sources */,
-				A1D2E3F4B5C6978899AA0013 /* DemoConfig.swift in Sources */,
-				B2E3F5C6B7D8E9F0A1B2C3D4 /* TrafficService.swift in Sources */,
-				C3F4G6D7E8F9A0B1C2D3E4 /* TrafficAggregation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
