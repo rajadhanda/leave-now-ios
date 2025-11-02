@@ -245,7 +245,7 @@ public struct GoogleTrafficService: TrafficService {
     
     public func trafficInfo(from: GeoPoint, to: GeoPoint, departureTime: Date?) async throws -> TrafficInfo {
         var urlComponents = URLComponents(string: baseURL)!
-        var queryItems: [URLQueryItem] = [
+        let queryItems: [URLQueryItem] = [
             URLQueryItem(name: "key", value: apiKey),
             URLQueryItem(name: "origin", value: "\(from.lat),\(from.lon)"),
             URLQueryItem(name: "destination", value: "\(to.lat),\(to.lon)"),

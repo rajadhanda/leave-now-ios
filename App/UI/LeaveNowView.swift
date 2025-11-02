@@ -51,8 +51,9 @@ struct LeaveNowView: View {
             }
 
             // 2b) Update National Rail legs with RealtimeTrains data (keep tube/underground from TfL)
+            let departureTime = Date()
             let rtt = RealtimeTrainsService()
-            plans = await NationalRailLegUpdater.updateNationalRailLegs(plans: plans, railService: rtt, departureTime: departure)
+            plans = await NationalRailLegUpdater.updateNationalRailLegs(plans: plans, railService: rtt, departureTime: departureTime)
 
             // 3) Weather at origin
             let weatherSvc = OpenWeatherService()
