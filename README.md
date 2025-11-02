@@ -2,25 +2,6 @@
 
 **Purpose:** Provide confident, low-friction, personalised recommendations on **when to leave** and **which familiar route to take**, based on current conditions, routine patterns, and journey stability. We solve **timing confidence**, not navigation.
 
-## Differentiation (vs Citymapper / Google Maps)
-
-| Feature | Citymapper / Google | Leave Now? |
-
-| --- | --- | --- |
-
-| Route exploration | ✅ | ❌ Out of scope |
-
-| Carriage / exits | ✅ | ❌ Out of scope |
-
-| Platform numbers | ✅ | ✅ (only when relevant) |
-
-| Weather-adjusted walking | ❌ | ✅ |
-
-| Reliability / variance (P50/P90) | ❌ | **✅ Core** |
-
-| Personal walking/transfer calibration | ❌ | **✅ Learns** |
-
-| Proactive “leave now” timing | ❌ | **✅ Primary** |
 
 ## Core Screens
 
