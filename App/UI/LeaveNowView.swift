@@ -44,11 +44,15 @@ struct LeaveNowView: View {
 
             // 2) Fetch journey plans from TfL
             let tfl = TflTransitService()
-            let plans = try await tfl.journeyPlans(from: originCoord, to: destCoord, departure: Date())
+            var plans = try await tfl.journeyPlans(from: originCoord, to: destCoord, departure: Date())
             guard !plans.isEmpty else {
                 vm.bind(Self.mockRecommendation())
                 return
             }
+
+            // 2b) Update National Rail legs with RealtimeTrains data (keep tube/underground from TfL)
+            let rtt = RealtimeTrainsService()
+            plans = await NationalRailLegUpdater.updateNationalRailLegs(plans: plans, railService: rtt, departureTime: departure)
 
             // 3) Weather at origin
             let weatherSvc = OpenWeatherService()
@@ -56,15 +60,7 @@ struct LeaveNowView: View {
             let rainEnd: Date? = try? await weatherSvc.rainEndTime(at: originCoord.latitude, lon: originCoord.longitude, horizonHours: 12)
             let weather: Weather? = rain.map { Weather(precipitationMmPerHr: $0) }
 
-            // 4) Realtime Trains (optional): Euston (EUS) → Milton Keynes Central (MKC)
-            var railMeta: RailLegMeta? = nil
-            if let rtt = RealtimeTrainsService() {
-                if let first = try? await rtt.nextServices(from: "EUS", to: "MKC", around: Date(), limit: 1).first {
-                    railMeta = first
-                }
-            }
-
-            // 5) Fetch traffic data for car legs (if any)
+            // 4) Fetch traffic data for car legs (if any)
             let originGeo = GeoPoint(lat: originCoord.latitude, lon: originCoord.longitude)
             let destGeo = GeoPoint(lat: destCoord.latitude, lon: destCoord.longitude)
             let trafficAggregation = TrafficAggregation()
@@ -82,15 +78,6 @@ struct LeaveNowView: View {
             let now = Date()
             let best = result.best
             let fb = result.fallback
-            // Compute minutes to first national rail leg (if present)
-            let minutesToRail: Int? = {
-                var acc = 0
-                for leg in best.plan.legs {
-                    if leg.mode == .nationalRail { return acc }
-                    acc += leg.durationMinutes
-                }
-                return nil
-            }()
             let routeLabel: String = {
                 let lines = best.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
                 return lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
@@ -117,21 +104,9 @@ struct LeaveNowView: View {
                 if let line { return "\(modeLabel): take \(line)" }
                 return nil
             }
-            let hasRailLeg = best.plan.legs.contains(where: { $0.mode == .nationalRail })
-            let railPlatformInfo: String? = railMeta.flatMap { meta in
-                let timeFmt: DateFormatter = {
-                    let df = DateFormatter()
-                    df.dateFormat = "HH:mm"
-                    return df
-                }()
-                let timeStr = meta.departure.estimatedTime.map(timeFmt.string) ?? timeFmt.string(from: meta.departure.plannedTime)
-                let plat = meta.departure.platform.map { "Platform \($0)" } ?? "Platform TBC"
-                return "National Rail: Euston → Milton Keynes Central, depart \(timeStr), \(plat)"
-            } ?? (hasRailLeg ? "National Rail: Euston → Milton Keynes Central, live platform unavailable" : nil)
             let platformHintCombined: String? = {
                 var parts: [String] = []
                 if let s = startStationText { parts.append(s) }
-                if let rail = railPlatformInfo { parts.append(rail) }
                 return parts.isEmpty ? nil : parts.joined(separator: " • ")
             }()
             let routeSummary: [RouteLegSummary] = best.plan.legs.map { leg in
@@ -143,22 +118,9 @@ struct LeaveNowView: View {
                 return (legs, lbl, f.plan.changes, f.plan.walkMinutes)
             }
 
-            // Optimize departure to reduce wait at Euston when railMeta is known
+            // Determine departure decision (simplified - no longer using railMeta for optimization)
             var decision: LeaveDecision = .leaveNow
             var recommendedDeparture: Date? = now
-            if let railMeta, let m2r = minutesToRail {
-                let arrivalAtEuston = Calendar.current.date(byAdding: .minute, value: m2r, to: now) ?? now
-                let trainDep = railMeta.departure.estimatedTime ?? railMeta.departure.plannedTime
-                let waitSeconds = trainDep.timeIntervalSince(arrivalAtEuston)
-                let bufferSeconds: TimeInterval = 5 * 60
-                if waitSeconds > (8 * 60) {
-                    let depTime = trainDep.addingTimeInterval(-bufferSeconds).addingTimeInterval(Double(-m2r * 60))
-                    if depTime > now {
-                        decision = .leaveInMinutes
-                        recommendedDeparture = depTime
-                    }
-                }
-            }
 
             let rec = Recommendation(
                 id: .init(),

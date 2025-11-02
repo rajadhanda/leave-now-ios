@@ -12,6 +12,7 @@
 		17DA592D09FA450A8D4298F5 /* Geocoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF3F19239E96B123B08E341 /* Geocoding.swift */; };
 		18F508C9F63FD211D00F2238 /* TrafficAggregation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC55DA00E387D582B295C0AF /* TrafficAggregation.swift */; };
 		1955E621062DF053FFC1E0D1 /* DemoConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB798DA880F5AD78E2B8A6F /* DemoConfig.swift */; };
+		2090EBE972C5486D6F883651 /* NationalRailLegUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59A5A75C635BC0D789AE86 /* NationalRailLegUpdater.swift */; };
 		2234F7AF79411C10E6A4CD01 /* RecommendationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED760F94B8585E1894525956 /* RecommendationCard.swift */; };
 		22BE16AB4FAFBDE497112422 /* Secrets.plist.example in Resources */ = {isa = PBXBuildFile; fileRef = 941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */; };
 		2380397D22D3AF70F4FC8C67 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8374F3EF5E8BFF2ADD5E9E87 /* Errors.swift */; };
@@ -33,6 +34,7 @@
 		7F891AA2D390B23F7EC876C6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DACBA925407E8BFFD41329C /* SettingsView.swift */; };
 		93CB880F45B33BA23B5F7AF0 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A607EF71A0A54D2F13F6AF /* Secrets.swift */; };
 		980FE00B6E6EA06182E62400 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 232716AB4D7885EC5DCD35A1 /* Assets.xcassets */; };
+		A7B8A7A039CFD3891D67ABD9 /* StationNameMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF50C33552F1042EC13A4FC9 /* StationNameMapper.swift */; };
 		AFE6F47AB1084889EF1F7DA5 /* UserPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B11F2C7E5D9D6D30EA3D17D /* UserPrefs.swift */; };
 		B05BE2F8E3A8C96FDF7A9C6F /* MapsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1D4EB79CD7D7CD59368EAB /* MapsService.swift */; };
 		B116E06CBC7DC001F68230D3 /* RecommenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0799E4E9F8849780821B9D1D /* RecommenderTests.swift */; };
@@ -107,9 +109,11 @@
 		CEB798DA880F5AD78E2B8A6F /* DemoConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoConfig.swift; sourceTree = "<group>"; };
 		D38794FDCBDF8FB41531D4AA /* DestinationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationPicker.swift; sourceTree = "<group>"; };
 		D4B34453C358005BB1A2AD26 /* TransitAggregation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitAggregation.swift; sourceTree = "<group>"; };
+		DD59A5A75C635BC0D789AE86 /* NationalRailLegUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NationalRailLegUpdater.swift; sourceTree = "<group>"; };
 		E3B1F3F4EE2635D9B80CB912 /* RealtimeTrainsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeTrainsService.swift; sourceTree = "<group>"; };
 		EA711E927EC04140DF8D1AAE /* Recommender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recommender.swift; sourceTree = "<group>"; };
 		ED760F94B8585E1894525956 /* RecommendationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationCard.swift; sourceTree = "<group>"; };
+		EF50C33552F1042EC13A4FC9 /* StationNameMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationNameMapper.swift; sourceTree = "<group>"; };
 		FD60E32A0B2D7802239F9C47 /* RecommendationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -150,6 +154,7 @@
 			children = (
 				AC33FCCB8B361C3997765B70 /* LocationService.swift */,
 				1A1D4EB79CD7D7CD59368EAB /* MapsService.swift */,
+				DD59A5A75C635BC0D789AE86 /* NationalRailLegUpdater.swift */,
 				11DB2F736D7AF021338AE345 /* NationalRailService.swift */,
 				E3B1F3F4EE2635D9B80CB912 /* RealtimeTrainsService.swift */,
 				8B1A11D2943832785A4C9970 /* TflTransitService.swift */,
@@ -216,6 +221,7 @@
 				4272D616BCD2038A4FB3155B /* Secrets.plist */,
 				941AFBAE59D81B70C568D5C7 /* Secrets.plist.example */,
 				A3A607EF71A0A54D2F13F6AF /* Secrets.swift */,
+				EF50C33552F1042EC13A4FC9 /* StationNameMapper.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -376,6 +382,7 @@
 				E543512B81A9E36925190016 /* LeaveNowView.swift in Sources */,
 				4A0AEE296757DFF939EF4750 /* LocationService.swift in Sources */,
 				B05BE2F8E3A8C96FDF7A9C6F /* MapsService.swift in Sources */,
+				2090EBE972C5486D6F883651 /* NationalRailLegUpdater.swift in Sources */,
 				4498551C9952FAD49458BA00 /* NationalRailService.swift in Sources */,
 				701BC9F9B5C8D51CA83372DD /* RealtimeTrainsService.swift in Sources */,
 				F7D60A8CA557C51EFC8EC9D5 /* Recommendation.swift in Sources */,
@@ -387,6 +394,7 @@
 				77FC75B12D50616EC560430D /* RouteMapper.swift in Sources */,
 				93CB880F45B33BA23B5F7AF0 /* Secrets.swift in Sources */,
 				7F891AA2D390B23F7EC876C6 /* SettingsView.swift in Sources */,
+				A7B8A7A039CFD3891D67ABD9 /* StationNameMapper.swift in Sources */,
 				34F36C2ACB2DC01BC0FBC263 /* TflTransitService.swift in Sources */,
 				18F508C9F63FD211D00F2238 /* TrafficAggregation.swift in Sources */,
 				49514D671AF6DD71E786399F /* TrafficService.swift in Sources */,
