@@ -74,6 +74,7 @@ private extension JourneyResultsDTO {
                 case "overground": legMode = .overground
                 case "dlr": legMode = .dlr
                 case "national-rail": legMode = .nationalRail
+                case "car", "driving": legMode = .car
                 default: legMode = .walk
                 }
                 let line = l.routeOptions?.first?.name

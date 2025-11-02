@@ -31,4 +31,5 @@ struct Config {
     static let openWeatherKey = "OPENWEATHER_API_KEY"
     static let rttUsernameKey = "REALTIMETRAINS_USERNAME"
     static let rttPasswordKey = "REALTIMETRAINS_PASSWORD"
+    static let hereApiKeyKey = "HERE_API_KEY"
 }

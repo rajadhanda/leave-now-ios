@@ -49,6 +49,13 @@ struct RecommenderV2 {
                 case .overground: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.5))
                 case .dlr: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.0))
                 case .nationalRail: priors.append(DelayPrior(meanMin: 0.0, stdMin: 3.0))
+                case .car: 
+                    // Car traffic can vary significantly - higher uncertainty
+                    // Traffic delays can range from minor (1-2 min) to severe (10+ min)
+                    // Use percentage of journey time for variability
+                    let journeyMinutes = Double(leg.durationMinutes)
+                    // Traffic variability is roughly 5-15% of journey time
+                    priors.append(DelayPrior(meanMin: 0.0, stdMin: max(2.0, journeyMinutes * 0.10)))
                 case .walk: break
                 }
             }

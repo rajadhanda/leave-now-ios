@@ -42,9 +42,19 @@ struct LeaveNowView: View {
                 destCoord = d
             }
 
-            // 2) Fetch journey plans from TfL
+            // 2) Fetch journey plans from TfL (transit)
             let tfl = TflTransitService()
-            let plans = try await tfl.journeyPlans(from: originCoord, to: destCoord, departure: Date())
+            var plans = try await tfl.journeyPlans(from: originCoord, to: destCoord, departure: Date())
+            
+            // 2b) Also fetch car route option from HERE API (with live traffic)
+            let carService = CarRoutingService()
+            let carPlans = await carService.carJourneyPlans(
+                from: originCoord,
+                to: destCoord,
+                departure: Date()
+            )
+            plans.append(contentsOf: carPlans)
+            
             guard !plans.isEmpty else {
                 vm.bind(Self.mockRecommendation())
                 return
@@ -86,6 +96,11 @@ struct LeaveNowView: View {
                 return nil
             }()
             let routeLabel: String = {
+                let hasCar = best.plan.legs.contains(where: { $0.mode == .car })
+                if hasCar {
+                    let duration = best.plan.totalDurationMinutes
+                    return "Car (\(duration) min)"
+                }
                 let lines = best.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
                 return lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
             }()
@@ -103,6 +118,7 @@ struct LeaveNowView: View {
                     case .dlr: return "DLR"
                     case .nationalRail: return "National Rail"
                     case .walk: return "Walk"
+                    case .car: return "Car"
                     }
                 }()
                 if let name { return "\(modeLabel) from: \(name)" }
@@ -255,6 +271,7 @@ private func mapMode(_ mode: LegMode) -> LegType {
     case .overground: return .overground
     case .dlr: return .dlr
     case .nationalRail: return .rail
+    case .car: return .car
     }
 }
 
