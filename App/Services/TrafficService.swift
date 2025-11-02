@@ -60,23 +60,38 @@ public protocol TrafficService {
 /// 
 /// Uses HERE Routing API v8 with real-time traffic
 /// Documentation: https://developer.here.com/documentation/routing-api/8.17.0/dev_guide/index.html
+/// Free tier limits: ~5,000 requests/month
 public struct HereTrafficService: TrafficService {
     private let apiKey: String
     private let baseURL = "https://router.hereapi.com/v8"
+    
+    // Rate limiting to respect free tier (max 5 requests per minute conservatively)
+    private static var lastRequestTime: Date?
+    private static let minRequestInterval: TimeInterval = 12.0 // 12 seconds = 5 requests per minute
     
     public init(apiKey: String) {
         self.apiKey = apiKey
     }
     
     public func trafficInfo(from: GeoPoint, to: GeoPoint, departureTime: Date?) async throws -> TrafficInfo {
+        // Rate limiting to stay within free tier limits
+        if let lastRequest = HereTrafficService.lastRequestTime {
+            let timeSinceLastRequest = Date().timeIntervalSince(lastRequest)
+            if timeSinceLastRequest < HereTrafficService.minRequestInterval {
+                let waitTime = HereTrafficService.minRequestInterval - timeSinceLastRequest
+                try await Task.sleep(nanoseconds: UInt64(waitTime * 1_000_000_000))
+            }
+        }
+        HereTrafficService.lastRequestTime = Date()
+        
         var urlComponents = URLComponents(string: "\(baseURL)/routes")!
         var queryItems: [URLQueryItem] = [
-            URLQueryItem(name: "apiKey", value: apiKey),
+            URLQueryItem(name: "apikey", value: apiKey), // HERE API v8 uses 'apikey' parameter
             URLQueryItem(name: "origin", value: "\(from.lat),\(from.lon)"),
             URLQueryItem(name: "destination", value: "\(to.lat),\(to.lon)"),
             URLQueryItem(name: "transportMode", value: "car"),
             URLQueryItem(name: "return", value: "summary,actions"),
-            URLQueryItem(name: "routingMode", value: "fast"), // Uses live traffic
+            URLQueryItem(name: "routingMode", value: "fast"), // Uses live traffic data
         ]
         
         // Add departure time if specified (for predictive routing)
@@ -109,21 +124,58 @@ public struct HereTrafficService: TrafficService {
               let sections = firstRoute["sections"] as? [[String: Any]],
               let firstSection = sections.first,
               let summary = firstSection["summary"] as? [String: Any] else {
+            // Log response for debugging
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                print("HERE API response: \(json)")
+            }
             throw TrafficServiceError.invalidResponse
         }
         
         // Extract duration (in seconds from HERE API)
-        let durationSeconds = summary["duration"] as? Int ?? 0
+        // HERE API returns duration in seconds
+        let durationSeconds = (summary["duration"] as? Int) ?? (summary["duration"] as? Double).map { Int($0) } ?? 0
         let durationMinutes = Int(round(Double(durationSeconds) / 60.0))
         
         // Extract base duration (free-flow, no traffic) - if available
-        let baseDurationSeconds = summary["baseDuration"] as? Int ?? durationSeconds
+        // HERE API may provide baseDuration in summary or we calculate it from traffic
+        let baseDurationSeconds: Int
+        if let base = summary["baseDuration"] as? Int {
+            baseDurationSeconds = base
+        } else if let base = (summary["baseDuration"] as? Double).map({ Int($0) }) {
+            baseDurationSeconds = base
+        } else {
+            // If baseDuration not available, estimate from traffic-aware duration
+            // HERE API typically returns duration already including traffic
+            // We'll use the duration as base and estimate delay from traffic pattern
+            baseDurationSeconds = durationSeconds
+        }
         let baseDurationMinutes = Int(round(Double(baseDurationSeconds) / 60.0))
         
         // Calculate traffic delay
-        let trafficDelayMinutes = max(0, durationMinutes - baseDurationMinutes)
+        // HERE API with routingMode=fast returns duration with traffic
+        // If baseDuration isn't available, estimate it from typical free-flow speed
+        let estimatedBaseDurationMinutes: Int
+        if baseDurationMinutes == durationMinutes && durationMinutes > 0 {
+            // Base duration not provided, estimate from distance if available
+            if let length = summary["length"] as? Int ?? (summary["length"] as? Double).map({ Int($0) }) {
+                // Estimate free-flow duration: assume 50 km/h average for urban/mixed roads
+                // Length is in meters, speed in km/h: time (hours) = (length/1000) / 50
+                // Time (minutes) = ((length/1000) / 50) * 60 = (length/1000) * 60/50 = (length/1000) * 1.2
+                // Simplified: length in km * 1.2 minutes per km ? length/1000 * 1.2
+                let lengthKm = Double(length) / 1000.0
+                let avgSpeedKmh = 50.0 // Conservative urban speed
+                estimatedBaseDurationMinutes = max(1, Int(round(lengthKm / avgSpeedKmh * 60.0)))
+            } else {
+                // Fallback: assume 15% traffic delay as conservative estimate
+                estimatedBaseDurationMinutes = max(1, Int(Double(durationMinutes) * 0.85))
+            }
+        } else {
+            estimatedBaseDurationMinutes = baseDurationMinutes
+        }
         
-        // Determine traffic level
+        let trafficDelayMinutes = max(0, durationMinutes - estimatedBaseDurationMinutes)
+        
+        // Determine traffic level based on delay
         let trafficLevel = determineTrafficLevel(delayMinutes: trafficDelayMinutes, durationMinutes: durationMinutes)
         
         // Extract incidents/events from actions
@@ -147,7 +199,7 @@ public struct HereTrafficService: TrafficService {
         }
         
         return TrafficInfo(
-            baseDurationMinutes: baseDurationMinutes,
+            baseDurationMinutes: estimatedBaseDurationMinutes,
             currentDurationMinutes: durationMinutes,
             trafficDelayMinutes: trafficDelayMinutes,
             trafficLevel: trafficLevel,
