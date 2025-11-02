@@ -25,7 +25,7 @@ struct RecommenderV2 {
         return Double(p50) + alpha * spread + beta * Double(changes) + gamma * Double(walkMinutes) - delta * comfortBonus
     }
 
-    func recommend(plans: [JourneyPlan], weather: Weather?, disruptions: [Disruption]) -> RecommendationResult? {
+    func recommend(plans: [JourneyPlan], weather: Weather?, disruptions: [Disruption], trafficInfoByPlan: [[TrafficInfo]] = []) -> RecommendationResult? {
         guard !plans.isEmpty else { return nil }
         let model = MonteCarloUncertainty()
         let estimator = DefaultETAEstimator()
@@ -39,8 +39,9 @@ struct RecommenderV2 {
                 }
             }
         }
-        func baselinePriors(for plan: JourneyPlan) -> [DelayPrior] {
+        func baselinePriors(for plan: JourneyPlan, trafficInfo: [TrafficInfo] = []) -> [DelayPrior] {
             var priors: [DelayPrior] = []
+            var trafficIndex = 0
             // Add small variability for each non-walk leg
             for leg in plan.legs where leg.mode != .walk {
                 switch leg.mode {
@@ -49,6 +50,33 @@ struct RecommenderV2 {
                 case .overground: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.5))
                 case .dlr: priors.append(DelayPrior(meanMin: 0.0, stdMin: 1.0))
                 case .nationalRail: priors.append(DelayPrior(meanMin: 0.0, stdMin: 3.0))
+                case .car:
+                    // Car legs have traffic-dependent variability
+                    if trafficIndex < trafficInfo.count {
+                        let traffic = trafficInfo[trafficIndex]
+                        // Base variability increases with traffic level
+                        let baseStdMin: Double = {
+                            switch traffic.trafficLevel {
+                            case .light: return 2.0      // Low variability in light traffic
+                            case .moderate: return 4.0   // Moderate variability
+                            case .heavy: return 6.0      // High variability
+                            case .severe: return 8.0     // Very high variability
+                            }
+                        }()
+                        // Add mean delay based on current traffic delay
+                        let meanDelay = Double(traffic.trafficDelayMinutes) * 0.7 // Conservative estimate
+                        // Increase std dev based on incidents/closures
+                        let incidentMultiplier = traffic.hasIncidents ? 1.5 : 1.0
+                        let closureMultiplier = traffic.roadClosures.isEmpty ? 1.0 : 1.8
+                        priors.append(DelayPrior(
+                            meanMin: meanDelay,
+                            stdMin: baseStdMin * incidentMultiplier * closureMultiplier
+                        ))
+                    } else {
+                        // No traffic data available - use conservative defaults
+                        priors.append(DelayPrior(meanMin: 3.0, stdMin: 5.0))
+                    }
+                    trafficIndex += 1
                 case .walk: break
                 }
             }
@@ -58,10 +86,12 @@ struct RecommenderV2 {
             }
             return priors
         }
-        let scored: [(JourneyPlan, Int, Int, Double, Double)] = plans.map { plan in
+        let scored: [(JourneyPlan, Int, Int, Double, Double)] = plans.enumerated().map { index, plan in
             let base = estimator.baseETA(minutesForLegs: plan.legs.map { $0.durationMinutes })
             let rainDelta = estimator.applyWeatherPenalty(walkMinutes: plan.walkMinutes, rainIntensity: weather?.precipitationMmPerHr, k: kRain)
-            let allPriors = baselinePriors(for: plan) + priorsFor(disruptions: disruptions)
+            // Get traffic info for this plan if available
+            let trafficInfo = index < trafficInfoByPlan.count ? trafficInfoByPlan[index] : []
+            let allPriors = baselinePriors(for: plan, trafficInfo: trafficInfo) + priorsFor(disruptions: disruptions)
             let (p50, p90) = model.simulateETADistribution(baseMinutes: base + rainDelta,
                                                            priors: allPriors,
                                                            samples: samples)

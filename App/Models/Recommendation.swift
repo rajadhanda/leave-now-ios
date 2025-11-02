@@ -68,7 +68,7 @@ public struct RouteLegSummary: Codable, Equatable {
     public let approxMinutes: Int
 }
 
-public enum LegType: String, Codable { case walk, tube, rail, bus, tram, dlr, overground, elizabeth, ferry }
+public enum LegType: String, Codable { case walk, tube, rail, bus, tram, dlr, overground, elizabeth, ferry, car }
 
 public enum ComfortTag: String, Codable { case fewerChanges, mostlySeated, weatherProtected, minimalWalking }
 
