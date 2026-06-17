@@ -36,6 +36,70 @@ struct TflTransitService {
         let dto = try JSONDecoder.tfl.decode(JourneyResultsDTO.self, from: data)
         return dto.toPlans()
     }
+
+    /// Current line-status disruptions, keyed by lowercased line id (e.g. "northern").
+    /// Lines with a good service are omitted. Defaults to the rail-like modes that
+    /// our journey plans use.
+    func disruptions(modes: String = "tube,dlr,overground,elizabeth-line") async throws -> [Disruption] {
+        var comps = URLComponents(string: "https://api.tfl.gov.uk/Line/Mode/\(modes)/Status")!
+        var items: [URLQueryItem] = []
+        let appId = Secrets.tflAppId
+        let appKey = Secrets.tflAppKey
+        if !appId.isEmpty { items.append(.init(name: "app_id", value: appId)) }
+        if !appKey.isEmpty { items.append(.init(name: "app_key", value: appKey)) }
+        if !items.isEmpty { comps.queryItems = items }
+
+        guard let url = comps.url else { throw URLError(.badURL) }
+        var req = URLRequest(url: url)
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, resp) = try await session.data(for: req)
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        let lines = try JSONDecoder().decode([LineStatusDTO].self, from: data)
+        return lines.compactMap { line -> Disruption? in
+            guard let id = line.id else { return nil }
+            let severities = (line.lineStatuses ?? []).compactMap {
+                mapTfLSeverity($0.statusSeverity ?? 10, $0.statusSeverityDescription ?? "")
+            }
+            guard let worst = severities.max(by: { tflSeverityRank($0) < tflSeverityRank($1) }) else { return nil }
+            return Disruption(lineId: id.lowercased(), affectedStations: [], severity: worst)
+        }
+    }
+}
+
+// MARK: - Line status decoding
+
+private struct LineStatusDTO: Decodable {
+    let id: String?
+    let name: String?
+    let lineStatuses: [Status]?
+    struct Status: Decodable {
+        let statusSeverity: Int?
+        let statusSeverityDescription: String?
+    }
+}
+
+/// Maps a TfL status (severity number + description) to our coarse severity, or
+/// nil when there is effectively no disruption. The textual description is more
+/// reliable than the numeric scale, which is non-monotonic.
+private func mapTfLSeverity(_ severity: Int, _ description: String) -> DisruptionSeverity? {
+    let desc = description.lowercased()
+    if desc.contains("good service") || desc.contains("no issues") { return nil }
+    if desc.contains("minor") { return .minor }
+    if desc.contains("severe") || desc.contains("suspended") || desc.contains("closure")
+        || desc.contains("closed") || desc.contains("not running") || desc.contains("no service") {
+        return .severe
+    }
+    return .moderate
+}
+
+private func tflSeverityRank(_ severity: DisruptionSeverity) -> Int {
+    switch severity {
+    case .minor: return 1
+    case .moderate: return 2
+    case .severe: return 3
+    }
 }
 
 // MARK: - Decoding (tolerant, minimal fields)
