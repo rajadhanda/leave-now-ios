@@ -11,6 +11,16 @@
 
 ## Build
 
+The Xcode project is generated from [`project.yml`](project.yml) with
+[XcodeGen](https://github.com/yonaskolb/XcodeGen) — it is **not** committed.
+
+```sh
+brew install xcodegen
+cp App/Support/Secrets.plist.example App/Support/Secrets.plist   # then add your keys
+xcodegen generate
+open LeaveNow.xcodeproj
+```
+
 - iOS 17+, SwiftUI, async/await, Combine
 
 - Services: TfL Unified API (journeys + disruptions), Apple MapKit (walking ETA), OpenWeather

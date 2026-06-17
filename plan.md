@@ -13,7 +13,20 @@
 - Add uncertainty model and scoring.
 
 ## Progress
-- Milestones 1-5 implemented with mocked demo path.
-- Persistence is JSON-backed for V1 simplicity.
-- Next: Wire real services and Core Data swap if needed.
+- Live path: TfL journeys + line-status disruptions, OpenWeather rain, optional
+  RealtimeTrains/traffic enrichment, Monte-Carlo ETA, utility scoring.
+- Decision engine: `DepartureDecider` turns P90 + an optional "arrive by" into
+  leave-now / leave-in-N / wait / take-fallback.
+- UI: tabbed app; editable trip + arrive-by; reachable Settings with working
+  scoring-weight sliders; fallback route expansion; explicit "sample data" state
+  on failure (no more silently presenting mock data as live).
+- Notifications: local "time to leave" reminder + a background-refresh task
+  (basic; needs on-device verification).
+- Project is generated from `project.yml` via XcodeGen (no committed .xcodeproj).
+
+## Next
+- On-device verification of background refresh + notification delivery.
+- Persist trip outcomes (`OutcomeEvent`/`TripHistoryStore`) and build History.
+- Replace the RealtimeTrains placeholder with real endpoint/DTOs.
+- Per-leg traffic once a provider emits car legs.
 

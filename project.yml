@@ -31,7 +31,10 @@ targets:
       - App/Support/Secrets.plist
     settings:
       base:
-        PRODUCT_NAME: Leave Now?
+        # Clean executable/bundle/module name (no spaces or "?"), so the test
+        # host path and `@testable import LeaveNow` are straightforward. The
+        # user-facing name "Leave Now?" is set via CFBundleDisplayName in Info.plist.
+        PRODUCT_NAME: LeaveNow
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       configs:
         Debug:
@@ -52,8 +55,10 @@ targets:
       - Tests
     settings:
       base:
-        TEST_HOST: ""
-        BUNDLE_LOADER: ""
+        # Host the tests in the app so `@testable import LeaveNow` resolves the
+        # app's symbols at link time (BUNDLE_LOADER) and at runtime (TEST_HOST).
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/LeaveNow.app/LeaveNow"
+        BUNDLE_LOADER: "$(TEST_HOST)"
     dependencies:
       - target: LeaveNow
 schemes:

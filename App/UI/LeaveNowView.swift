@@ -1,232 +1,103 @@
 import SwiftUI
-import CoreLocation
-
+import Foundation
 
 struct LeaveNowView: View {
     @StateObject private var vm = RecommendationViewModel()
-    
+    @State private var showTripEditor = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                tripHeader
+                RecommendationCard(vm: vm)
+            }
+            .padding()
+        }
+        .navigationTitle("Leave Now?")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await vm.refresh() } } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .disabled(vm.isLoading)
+            }
+        }
+        .refreshable { await vm.refresh() }
+        .task { await vm.refresh() }
+        // Re-evaluate with the new trip whenever the editor is dismissed.
+        .sheet(isPresented: $showTripEditor, onDismiss: { Task { await vm.refresh() } }) {
+            TripEditView()
+        }
+    }
+
+    /// Tappable summary of the current trip; opens the editor.
+    private var tripHeader: some View {
+        Button { showTripEditor = true } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(UserPrefs.shared.originPostcode)  →  \(UserPrefs.shared.destinationPostcode)")
+                        .font(.subheadline).bold()
+                    if UserPrefs.shared.arriveByEnabled {
+                        Text("Arrive by \(arriveByText)")
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("Leave-now mode")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Image(systemName: "pencil.circle").foregroundStyle(.secondary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var arriveByText: String {
+        let df = DateFormatter()
+        df.dateFormat = "HH:mm"
+        return df.string(from: UserPrefs.shared.arriveBy)
+    }
+}
+
+/// Lets the user edit origin/destination and an optional target arrival time.
+/// These drive the recommendation and the leave-now/wait decision.
+struct TripEditView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var origin = UserPrefs.shared.originPostcode
+    @State private var destination = UserPrefs.shared.destinationPostcode
+    @State private var arriveByEnabled = UserPrefs.shared.arriveByEnabled
+    @State private var arriveBy = UserPrefs.shared.arriveBy
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                RecommendationCard(vm: vm)
-                    .padding()
-            }
-            .navigationTitle("Leave Now?")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await refresh() }
-                    } label: { Image(systemName: "arrow.clockwise") }
+            Form {
+                Section("Trip") {
+                    DestinationPicker("Origin postcode", text: $origin)
+                    DestinationPicker("Destination postcode", text: $destination)
+                }
+                Section("Timing") {
+                    Toggle("I need to arrive by a time", isOn: $arriveByEnabled)
+                    if arriveByEnabled {
+                        DatePicker("Arrive by", selection: $arriveBy, displayedComponents: .hourAndMinute)
+                    }
                 }
             }
-            .task { await refresh() }
-        }
-       
-    }
-
-    private func refresh() async {
-        do {
-            // 1) Resolve coordinates quickly (prefer DemoConfig fast map; fallback to geocoder)
-            let originCoord: CLLocationCoordinate2D
-            let destCoord: CLLocationCoordinate2D
-            if let o = DemoConfig.coords(for: DemoConfig.originPostcode), let d = DemoConfig.coords(for: DemoConfig.destinationPostcode) {
-                originCoord = .init(latitude: o.lat, longitude: o.lon)
-                destCoord = .init(latitude: d.lat, longitude: d.lon)
-            } else {
-                let geocoder = GeocodingHelper()
-                async let oCoord = geocoder.geocode(postcode: DemoConfig.originPostcode)
-                async let dCoord = geocoder.geocode(postcode: DemoConfig.destinationPostcode)
-                let (o, d) = try await (oCoord, dCoord)
-                originCoord = o
-                destCoord = d
+            .navigationTitle("Edit trip")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        UserPrefs.shared.originPostcode = origin.trimmingCharacters(in: .whitespacesAndNewlines)
+                        UserPrefs.shared.destinationPostcode = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+                        UserPrefs.shared.arriveByEnabled = arriveByEnabled
+                        UserPrefs.shared.arriveBy = arriveBy
+                        dismiss()
+                    }.bold()
+                }
             }
-
-            // 2) Fetch journey plans from TfL
-            let tfl = TflTransitService()
-            var plans = try await tfl.journeyPlans(from: originCoord, to: destCoord, departure: Date())
-            guard !plans.isEmpty else {
-                vm.bind(Self.mockRecommendation())
-                return
-            }
-
-            // 2b) Update National Rail legs with RealtimeTrains data (keep tube/underground from TfL)
-            let departureTime = Date()
-            let rtt = RealtimeTrainsService()
-            plans = await NationalRailLegUpdater.updateNationalRailLegs(plans: plans, railService: rtt, departureTime: departureTime)
-
-            // 3) Weather at origin
-            let weatherSvc = OpenWeatherService()
-            let rain = try await weatherSvc.currentRainIntensity(at: originCoord.latitude, lon: originCoord.longitude)
-            let rainEnd: Date? = try? await weatherSvc.rainEndTime(at: originCoord.latitude, lon: originCoord.longitude, horizonHours: 12)
-            let weather: Weather? = rain.map { Weather(precipitationMmPerHr: $0) }
-
-            // 4) Fetch traffic data for car legs (if any)
-            let originGeo = GeoPoint(lat: originCoord.latitude, lon: originCoord.longitude)
-            let destGeo = GeoPoint(lat: destCoord.latitude, lon: destCoord.longitude)
-            let trafficAggregation = TrafficAggregation()
-            let trafficInfoByPlan = await trafficAggregation.fetchTrafficForPlans(plans, origin: originGeo, destination: destGeo, departureTime: Date())
-            
-            // 6) Score and select best/fallback
-            let recV2 = RecommenderV2(kRain: UserPrefs.shared.rainSensitivity, alpha: 0.7, beta: 2.0, gamma: 0.3, delta: 1.0)
-            let disruptions: [Disruption] = []
-            guard let result = recV2.recommend(plans: plans, weather: weather, disruptions: disruptions, trafficInfoByPlan: trafficInfoByPlan) else {
-                vm.bind(Self.mockRecommendation())
-                return
-            }
-
-            // 7) Build UI Recommendation from engine result
-            let now = Date()
-            let best = result.best
-            let fb = result.fallback
-            let routeLabel: String = {
-                let lines = best.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
-                return lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
-            }()
-            // Enrichment strings for stations/platforms
-            let firstTransitLeg = best.plan.legs.first(where: { $0.mode != .walk })
-            let startStationText: String? = firstTransitLeg.flatMap { leg in
-                let name = (leg.fromStation?.isEmpty == false) ? leg.fromStation : nil
-                let toward = (leg.toStation?.isEmpty == false) ? leg.toStation : nil
-                let line = (leg.lineId?.isEmpty == false) ? leg.lineId : nil
-                let modeLabel: String = {
-                    switch leg.mode {
-                    case .tube: return "Tube"
-                    case .bus: return "Bus"
-                    case .overground: return "Overground"
-                    case .dlr: return "DLR"
-                    case .nationalRail: return "National Rail"
-                    case .car: return "Car"
-                    case .walk: return "Walk"
-                    }
-                }()
-                if let name { return "\(modeLabel) from: \(name)" }
-                if let line, let toward { return "\(modeLabel): take \(line) towards \(toward)" }
-                if let line { return "\(modeLabel): take \(line)" }
-                return nil
-            }
-            let platformHintCombined: String? = {
-                var parts: [String] = []
-                if let s = startStationText { parts.append(s) }
-                return parts.isEmpty ? nil : parts.joined(separator: " • ")
-            }()
-            let routeSummary: [RouteLegSummary] = best.plan.legs.map { leg in
-                RouteLegSummary(type: mapMode(leg.mode), lineOrService: leg.lineId, approxMinutes: leg.durationMinutes)
-            }
-            let fallbackSummary: ([RouteLegSummary], String, Int, Int)? = fb.map { f in
-                let lbl: String = f.plan.legs.compactMap { $0.lineId }.joined(separator: " → ")
-                let legs = f.plan.legs.map { RouteLegSummary(type: mapMode($0.mode), lineOrService: $0.lineId, approxMinutes: $0.durationMinutes) }
-                return (legs, lbl, f.plan.changes, f.plan.walkMinutes)
-            }
-
-            // Determine departure decision (simplified - no longer using railMeta for optimization)
-            let decision: LeaveDecision = .leaveNow
-            let recommendedDeparture: Date? = now
-
-            let rec = Recommendation(
-                id: .init(),
-                generatedAt: now,
-                context: .init(
-                    origin: .init(label: DemoConfig.originPostcode, geo: nil, transitStopID: nil),
-                    destination: .init(label: DemoConfig.destinationPostcode, geo: nil, transitStopID: nil),
-                    habitualCommute: true,
-                    window: .init(recommendedDeparture: recommendedDeparture, mode: decision == .leaveNow ? .now : .inMinutes)
-                ),
-                decision: decision,
-                route: .init(
-                    label: routeLabel,
-                    fingerprint: .init(lineSequence: best.plan.legs.compactMap { $0.lineId }, stopIds: nil),
-                    legs: routeSummary,
-                    changes: best.plan.changes,
-                    walkingMinutes: best.plan.walkMinutes,
-                    platformHint: platformHintCombined,
-                    comfort: .minimalWalking
-                ),
-                fallback: fallbackSummary.map { fs in
-                    .init(
-                        label: fs.1,
-                        fingerprint: .init(lineSequence: fb?.plan.legs.compactMap { $0.lineId } ?? [], stopIds: nil),
-                        legs: fs.0,
-                        changes: fs.2,
-                        walkingMinutes: fs.3,
-                        platformHint: nil,
-                        comfort: .fewerChanges
-                    )
-                },
-                variance: .init(etaP50Minutes: best.p50Minutes, etaP90Minutes: best.p90Minutes),
-                confidence: .init(score: best.confidence, level: best.confidence > 0.75 ? .high : (best.confidence > 0.5 ? .medium : .low), limitingFactors: (rain ?? 0) > 0.1 ? [.weatherImpact] : []),
-                rationale: .init(oneLine: best.rationale, highlights: []),
-                inputs: .init(
-                    dataFreshness: .init(transitUpdatedAt: now, disruptionsUpdatedAt: now, weatherUpdatedAt: now),
-                    weather: .init(raining: (rain ?? 0) > 0.1, rainIntensity: rain, walkingPenaltyMinutes: Int(round((rain ?? 0) * 5.0)), rainEndsAt: rainEnd),
-                    disruptions: [] as [DisruptionImpact],
-                    priorsVersion: "priors-v0.3.2",
-                    weights: .init(alphaVariance: 0.7, betaChanges: 2.0, gammaWalking: 0.3, deltaComfort: 1.0)
-                ),
-                ttlSeconds: 300
-            )
-            vm.bind(rec)
-        } catch {
-            vm.bind(Self.mockRecommendation())
         }
     }
 }
-
-extension LeaveNowView {
-    static func mockRecommendation() -> Recommendation {
-        let now = Date()
-        return Recommendation(
-            id: .init(),
-            generatedAt: now,
-            context: .init(
-                origin: .init(label: "Home", geo: nil, transitStopID: nil),
-                destination: .init(label: "Office", geo: nil, transitStopID: nil),
-                habitualCommute: true,
-                window: .init(recommendedDeparture: Calendar.current.date(byAdding: .minute, value: 4, to: now), mode: .inMinutes)
-            ),
-            decision: .leaveInMinutes,
-            route: .init(
-                label: "Northern → Jubilee",
-                fingerprint: .init(lineSequence: ["northern","jubilee"], stopIds: nil),
-                legs: [
-                    .init(type: .walk, lineOrService: nil, approxMinutes: 6),
-                    .init(type: .tube, lineOrService: "Northern", approxMinutes: 12),
-                    .init(type: .tube, lineOrService: "Jubilee", approxMinutes: 10),
-                    .init(type: .walk, lineOrService: nil, approxMinutes: 4)
-                ],
-                changes: 1, walkingMinutes: 10, platformHint: nil, comfort: .minimalWalking
-            ),
-            fallback: .init(
-                label: "Bus 24 → District",
-                fingerprint: .init(lineSequence: ["bus24","district"], stopIds: nil),
-                legs: [ .init(type: .bus, lineOrService: "Bus 24", approxMinutes: 18) ],
-                changes: 2, walkingMinutes: 7, platformHint: nil, comfort: .fewerChanges
-            ),
-            variance: .init(etaP50Minutes: 32, etaP90Minutes: 39),
-            confidence: .init(score: 0.82, level: .high, limitingFactors: [.weatherImpact]),
-            rationale: .init(oneLine: "Light rain adds +2m walking; no delays on your segment.", highlights: []),
-            inputs: .init(
-                dataFreshness: .init(transitUpdatedAt: now, disruptionsUpdatedAt: now, weatherUpdatedAt: now),
-                weather: .init(raining: true, rainIntensity: 0.3, walkingPenaltyMinutes: 2, rainEndsAt: nil),
-                disruptions: [],
-                priorsVersion: "priors-v0.3.2",
-                weights: .init(alphaVariance: 0.7, betaChanges: 2.0, gammaWalking: 0.3, deltaComfort: 1.0)
-            ),
-            ttlSeconds: 300
-        )
-    }
-}
-
-private func mapMode(_ mode: LegMode) -> LegType {
-    switch mode {
-    case .walk: return .walk
-    case .tube: return .tube
-    case .bus: return .bus
-    case .overground: return .overground
-    case .dlr: return .dlr
-    case .nationalRail: return .rail
-    case .car: return .car
-    }
-}
-
- 
