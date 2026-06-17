@@ -32,6 +32,9 @@ targets:
     settings:
       base:
         PRODUCT_NAME: Leave Now?
+        # PRODUCT_NAME has spaces/?, which would derive a module name of
+        # "Leave_Now_". Pin the module name so `@testable import LeaveNow` works.
+        PRODUCT_MODULE_NAME: LeaveNow
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       configs:
         Debug:
