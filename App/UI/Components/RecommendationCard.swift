@@ -5,7 +5,7 @@ struct RecommendationCard: View {
     @State private var showFallback = false
     @State private var reminder: ReminderState = .idle
 
-    private enum ReminderState { case idle, scheduled, denied }
+    private enum ReminderState: Equatable { case idle, scheduled, denied }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -109,8 +109,8 @@ struct RecommendationCard: View {
             Text(fb.label).font(.subheadline).bold()
             Text("\(fb.changes) change\(fb.changes == 1 ? "" : "s") • \(fb.walkingMinutes)m walking")
                 .font(.caption).foregroundStyle(.secondary)
-            ForEach(Array(fb.legs.enumerated()), id: \.offset) { _, leg in
-                Text("• \(legText(leg))").font(.caption)
+            ForEach(Array(fb.legs.enumerated()), id: \.offset) { item in
+                Text("• \(legText(item.element))").font(.caption)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
