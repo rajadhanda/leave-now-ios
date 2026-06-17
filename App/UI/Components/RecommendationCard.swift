@@ -3,6 +3,9 @@ import SwiftUI
 struct RecommendationCard: View {
     @ObservedObject var vm: RecommendationViewModel
     @State private var showFallback = false
+    @State private var reminder: ReminderState = .idle
+
+    private enum ReminderState { case idle, scheduled, denied }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -50,6 +53,8 @@ struct RecommendationCard: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            reminderButton
+
             if vm.hasFallback {
                 Divider()
                 Button {
@@ -73,6 +78,29 @@ struct RecommendationCard: View {
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(radius: 1)
+    }
+
+    @ViewBuilder
+    private var reminderButton: some View {
+        Button {
+            Task {
+                let ok = await vm.scheduleLeaveReminder()
+                reminder = ok ? .scheduled : .denied
+            }
+        } label: {
+            Label(reminderTitle, systemImage: reminder == .scheduled ? "bell.fill" : "bell")
+                .font(.callout)
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(reminder == .scheduled || vm.rec == nil)
+    }
+
+    private var reminderTitle: String {
+        switch reminder {
+        case .idle: return "Remind me when to leave"
+        case .scheduled: return "Reminder set"
+        case .denied: return "Enable notifications in Settings"
+        }
     }
 
     @ViewBuilder

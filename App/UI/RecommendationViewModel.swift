@@ -97,11 +97,47 @@ final class RecommendationViewModel: ObservableObject {
                                   decision: decisionResult,
                                   origin: origin,
                                   destination: destination,
-                                  weather: weather,
                                   rain: rain,
                                   rainEnd: rainEnd,
                                   disruptions: disruptions,
                                   now: now)
+    }
+
+    // MARK: - Notifications
+
+    /// Requests authorization and schedules a reminder at the recommended
+    /// departure time. Returns false if permission was denied or there's no rec.
+    func scheduleLeaveReminder() async -> Bool {
+        guard let r = rec else { return false }
+        let service = NotificationService()
+        guard await service.requestAuthorization() else { return false }
+        let fireDate = r.context.window.recommendedDeparture ?? Date()
+        await service.scheduleLeaveReminder(
+            at: fireDate,
+            title: leaveNotificationTitle(for: r),
+            body: "\(r.route.label) • ETA \(r.variance.etaP50Minutes) min (P50)"
+        )
+        return true
+    }
+
+    /// Used by background refresh: only nudge when the user should leave now/soon.
+    func notifyIfDepartureImminent() async {
+        guard let r = rec else { return }
+        switch r.decision {
+        case .leaveNow, .leaveInMinutes, .takeFallback:
+            _ = await scheduleLeaveReminder()
+        case .wait:
+            break
+        }
+    }
+
+    private func leaveNotificationTitle(for r: Recommendation) -> String {
+        switch r.decision {
+        case .leaveNow: return "Leave now"
+        case .leaveInMinutes: return "Leave soon"
+        case .wait: return "You can wait"
+        case .takeFallback: return "Switch to your fallback route"
+        }
     }
 
     // MARK: - Mapping engine -> UI model
@@ -111,7 +147,6 @@ final class RecommendationViewModel: ObservableObject {
                                     decision: DepartureDecision,
                                     origin: String,
                                     destination: String,
-                                    weather: Weather?,
                                     rain: Double?,
                                     rainEnd: Date?,
                                     disruptions: [Disruption],

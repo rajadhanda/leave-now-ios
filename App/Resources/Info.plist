@@ -31,5 +31,13 @@
     <string>https://api.realtimetrains.co.uk</string>
     <key>REALTIMETRAINS_API_KEY</key>
     <string></string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+    </array>
+    <key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+        <string>com.example.LeaveNow.refresh</string>
+    </array>
 </dict>
 </plist>
