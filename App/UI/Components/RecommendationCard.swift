@@ -2,9 +2,19 @@ import SwiftUI
 
 struct RecommendationCard: View {
     @ObservedObject var vm: RecommendationViewModel
+    @State private var showFallback = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if vm.source == .sample, let msg = vm.statusMessage {
+                Label(msg, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.yellow.opacity(0.18))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+
             Text("LEAVE NOW?").font(.headline).foregroundStyle(.secondary)
 
             Text(vm.title).font(.title2).bold()
@@ -40,21 +50,51 @@ struct RecommendationCard: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-
             if vm.hasFallback {
+                Divider()
                 Button {
-                    // Expand fallback overlay (to implement)
+                    withAnimation { showFallback.toggle() }
                 } label: {
-                    Text("View fallback (slower, safer)")
-                        .font(.callout)
+                    HStack {
+                        Text(showFallback ? "Hide fallback" : "View fallback (slower, safer)")
+                        Spacer()
+                        Image(systemName: showFallback ? "chevron.up" : "chevron.down")
+                    }
+                    .font(.callout)
                 }
                 .buttonStyle(.bordered)
+
+                if showFallback, let fb = vm.rec?.fallback {
+                    fallbackDetail(fb)
+                }
             }
         }
         .padding()
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(radius: 1)
+    }
+
+    @ViewBuilder
+    private func fallbackDetail(_ fb: RouteAdvice) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(fb.label).font(.subheadline).bold()
+            Text("\(fb.changes) change\(fb.changes == 1 ? "" : "s") • \(fb.walkingMinutes)m walking")
+                .font(.caption).foregroundStyle(.secondary)
+            ForEach(Array(fb.legs.enumerated()), id: \.offset) { _, leg in
+                Text("• \(legText(leg))").font(.caption)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
+    }
+
+    private func legText(_ leg: RouteLegSummary) -> String {
+        let mode = leg.type.rawValue.capitalized
+        if let line = leg.lineOrService, !line.isEmpty {
+            return "\(mode) \(line) — ~\(leg.approxMinutes)m"
+        }
+        return "\(mode) — ~\(leg.approxMinutes)m"
     }
 
     private func confidenceTint() -> Color {
@@ -66,5 +106,3 @@ struct RecommendationCard: View {
         }
     }
 }
-
-
