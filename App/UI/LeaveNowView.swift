@@ -69,11 +69,22 @@ struct TripEditView: View {
     @State private var arriveByEnabled = UserPrefs.shared.arriveByEnabled
     @State private var arriveBy = UserPrefs.shared.arriveBy
 
+    private func swapOriginAndDestination() {
+        let previousOrigin = origin
+        origin = destination
+        destination = previousOrigin
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section("Trip") {
                     DestinationPicker("Origin postcode", text: $origin)
+                    Button(action: swapOriginAndDestination) {
+                        Label("Switch origin & destination", systemImage: "arrow.up.arrow.down")
+                            .font(.subheadline)
+                    }
+                    .buttonStyle(.borderless)
                     DestinationPicker("Destination postcode", text: $destination)
                 }
                 Section("Timing") {

@@ -42,6 +42,16 @@ struct RecommendationCard: View {
             Text("Route: \(vm.routeLabel)")
                 .font(.subheadline)
 
+            if let route = vm.rec?.route, !route.legs.isEmpty {
+                Text("\(route.changes) change\(route.changes == 1 ? "" : "s") • \(route.walkingMinutes)m walking")
+                    .font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(route.legs.enumerated()), id: \.offset) { item in
+                        Text("• \(legText(item.element))").font(.caption)
+                    }
+                }
+            }
+
             if let hint = vm.rec?.route.platformHint, !hint.isEmpty {
                 Text("Directions")
                     .font(.subheadline).bold()
