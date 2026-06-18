@@ -46,15 +46,25 @@ final class RecommendationViewModel: ObservableObject {
         // 1) Coordinates: fast demo map, else geocode.
         let (originCoord, destCoord) = try await resolveCoordinates(origin: origin, destination: destination)
 
-        // 2) Journey plans from TfL.
+        let departureTime = Date()
+
+        // 2) Public-transport journey plans from TfL. Non-fatal: TfL only covers
+        //    London, so for a general commute it may return nothing — we still
+        //    want to offer a driving option, so we don't throw here.
         let tfl = TflTransitService()
-        var plans = try await tfl.journeyPlans(from: originCoord, to: destCoord, departure: Date())
-        guard !plans.isEmpty else { throw AppError.unavailable("journey plans") }
+        var plans = (try? await tfl.journeyPlans(from: originCoord, to: destCoord, departure: departureTime)) ?? []
 
         // 2b) Enrich National Rail legs with RealtimeTrains (no-op if not configured).
-        let departureTime = Date()
         let rtt = RealtimeTrainsService()
         plans = await NationalRailLegUpdater.updateNationalRailLegs(plans: plans, railService: rtt, departureTime: departureTime)
+
+        // 2c) Always add a driving candidate so a car route can be recommended
+        //     when it's the better option (or the only one available).
+        if let driving = DrivingRouteService().drivingPlan(from: originCoord, to: destCoord) {
+            plans.append(driving)
+        }
+
+        guard !plans.isEmpty else { throw AppError.unavailable("journey plans") }
 
         // 3) Weather at origin (non-fatal if unavailable).
         let weatherSvc = OpenWeatherService()
@@ -198,7 +208,14 @@ final class RecommendationViewModel: ObservableObject {
 
     private func routeAdvice(from rec: EngineRecommendation, isFallback: Bool) -> RouteAdvice {
         let lines = rec.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
-        let label = lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
+        // Prefer named lines (e.g. "Northern → Jubilee"); otherwise describe the
+        // route by its modes so car/walk-only journeys read sensibly ("Drive").
+        let label: String
+        if !lines.isEmpty {
+            label = lines.joined(separator: " → ")
+        } else {
+            label = modeBasedLabel(for: rec.plan)
+        }
         return RouteAdvice(
             label: label,
             fingerprint: .init(lineSequence: rec.plan.legs.compactMap { $0.lineId }, stopIds: nil),
@@ -208,6 +225,19 @@ final class RecommendationViewModel: ObservableObject {
             platformHint: isFallback ? nil : startStationText(rec.plan),
             comfort: isFallback ? .fewerChanges : .minimalWalking
         )
+    }
+
+    /// A route label built from the journey's transport modes, used when no
+    /// named transit lines are present (e.g. a driving or walking route). Walking
+    /// legs are dropped if any non-walk mode exists, so "Walk → Car" reads "Drive".
+    private func modeBasedLabel(for plan: JourneyPlan) -> String {
+        let nonWalk = plan.legs.filter { $0.mode != .walk }
+        let legs = nonWalk.isEmpty ? plan.legs : nonWalk
+        let labels = legs.map { modeLabel($0.mode) == "Car" ? "Drive" : modeLabel($0.mode) }
+        // Collapse consecutive duplicates (e.g. ["Bus","Bus"] -> "Bus").
+        var deduped: [String] = []
+        for l in labels where deduped.last != l { deduped.append(l) }
+        return deduped.isEmpty ? "Suggested route" : deduped.joined(separator: " → ")
     }
 
     private func legSummaries(_ plan: JourneyPlan) -> [RouteLegSummary] {
@@ -274,14 +304,21 @@ final class RecommendationViewModel: ObservableObject {
     }
 
     private func resolveCoordinates(origin: String, destination: String) async throws -> (CLLocationCoordinate2D, CLLocationCoordinate2D) {
-        if let o = DemoConfig.coords(for: origin), let d = DemoConfig.coords(for: destination) {
-            return (CLLocationCoordinate2D(latitude: o.lat, longitude: o.lon),
-                    CLLocationCoordinate2D(latitude: d.lat, longitude: d.lon))
-        }
         let geocoder = GeocodingHelper()
-        async let oCoord = geocoder.geocode(postcode: origin)
-        async let dCoord = geocoder.geocode(postcode: destination)
-        return try await (oCoord, dCoord)
+        // Resolve each endpoint independently and sequentially. CLGeocoder (the
+        // fallback path) does not support concurrent requests and throttles hard;
+        // resolving them one at a time — and caching results — is what makes a
+        // postcode change actually refresh instead of silently failing to mock.
+        let o = try await resolveOne(origin, using: geocoder)
+        let d = try await resolveOne(destination, using: geocoder)
+        return (o, d)
+    }
+
+    private func resolveOne(_ postcode: String, using geocoder: GeocodingHelper) async throws -> CLLocationCoordinate2D {
+        if let c = DemoConfig.coords(for: postcode) {
+            return CLLocationCoordinate2D(latitude: c.lat, longitude: c.lon)
+        }
+        return try await geocoder.geocode(postcode: postcode)
     }
 
     // MARK: - UI strings

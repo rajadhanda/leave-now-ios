@@ -28,6 +28,7 @@ struct TflTransitService {
 
         guard let url = comps.url else { throw URLError(.badURL) }
         var req = URLRequest(url: url)
+        req.timeoutInterval = 15
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
