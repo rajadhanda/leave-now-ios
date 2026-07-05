@@ -13,9 +13,9 @@ struct TflTransitService {
         let toStr = String(format: "%.6f,%.6f", dest.latitude, dest.longitude)
         comps.path = "/journey/journeyresults/\(fromStr)/to/\(toStr)"
         var items: [URLQueryItem] = []
-        let appId = Secrets.tflAppId
+        // TfL deprecated app_id; app_key alone authenticates. Keyless requests
+        // still work but are rate-limited, so a missing key is not fatal.
         let appKey = Secrets.tflAppKey
-        if !appId.isEmpty { items.append(.init(name: "app_id", value: appId)) }
         if !appKey.isEmpty { items.append(.init(name: "app_key", value: appKey)) }
         // Use departure time to the nearest minute
         let dateFormatter = DateFormatter()
@@ -43,9 +43,7 @@ struct TflTransitService {
     func disruptions(modes: String = "tube,dlr,overground,elizabeth-line") async throws -> [Disruption] {
         var comps = URLComponents(string: "https://api.tfl.gov.uk/Line/Mode/\(modes)/Status")!
         var items: [URLQueryItem] = []
-        let appId = Secrets.tflAppId
         let appKey = Secrets.tflAppKey
-        if !appId.isEmpty { items.append(.init(name: "app_id", value: appId)) }
         if !appKey.isEmpty { items.append(.init(name: "app_key", value: appKey)) }
         if !items.isEmpty { comps.queryItems = items }
 

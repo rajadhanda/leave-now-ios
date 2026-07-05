@@ -3,18 +3,15 @@ import Foundation
 struct RealtimeTrainsService: NationalRailService {
     private let session: URLSession
     private let baseURL: URL
-    private let apiKey: String?
-    private let basicUsername: String?
-    private let basicPassword: String?
+    private let token: String
 
-    init?(session: URLSession = .shared) {
-        guard let baseURL = RTTSecrets.realtimeTrainsBaseURL,
-              (RTTSecrets.realtimeTrainsApiKey != nil || (!Secrets.rttUsername.isEmpty && !Secrets.rttPassword.isEmpty)) else { return nil }
+    init?(session: URLSession = .shared,
+          baseURL: URL? = Secrets.realtimeTrainsBaseURL,
+          token: String? = Secrets.realtimeTrainsToken) {
+        guard let baseURL, let token else { return nil }
         self.session = session
         self.baseURL = baseURL
-        self.apiKey = RTTSecrets.realtimeTrainsApiKey
-        self.basicUsername = Secrets.rttUsername.isEmpty ? nil : Secrets.rttUsername
-        self.basicPassword = Secrets.rttPassword.isEmpty ? nil : Secrets.rttPassword
+        self.token = token
     }
 
     func nextServices(from originCRS: String, to destCRS: String, around when: Date, limit: Int) async throws -> [RailLegMeta] {
@@ -26,12 +23,7 @@ struct RealtimeTrainsService: NationalRailService {
             .init(name: "limit", value: String(limit))
         ]
         var req = URLRequest(url: comps.url!)
-        if let apiKey = apiKey {
-            req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        } else if let u = basicUsername, let p = basicPassword {
-            let token = Data("\(u):\(p)".utf8).base64EncodedString()
-            req.setValue("Basic \(token)", forHTTPHeaderField: "Authorization")
-        }
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
