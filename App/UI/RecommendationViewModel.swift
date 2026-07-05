@@ -140,30 +140,40 @@ final class RecommendationViewModel: ObservableObject {
 
     // MARK: - Notifications
 
-    /// Requests authorization and schedules a reminder at the recommended
-    /// departure time. Returns false if permission was denied or there's no rec.
+    /// Foreground path: requests authorization (prompting if needed) and
+    /// schedules a reminder at the recommended departure time. Returns false
+    /// if permission was denied or there's no rec.
     func scheduleLeaveReminder() async -> Bool {
         guard let r = rec else { return false }
         let service = NotificationService()
         guard await service.requestAuthorization() else { return false }
+        await scheduleReminder(for: r, using: service)
+        return true
+    }
+
+    /// Background path: only nudge when the user should leave now/soon, and
+    /// only when notifications are ALREADY authorized — authorization can
+    /// never be requested off a background task (the prompt cannot show), so
+    /// this must never call `requestAuthorization()`.
+    func notifyIfDepartureImminent() async {
+        guard let r = rec else { return }
+        switch r.decision {
+        case .leaveNow, .leaveInMinutes, .takeFallback:
+            let service = NotificationService()
+            guard await service.isAuthorized else { return }
+            await scheduleReminder(for: r, using: service)
+        case .wait:
+            break
+        }
+    }
+
+    private func scheduleReminder(for r: Recommendation, using service: NotificationService) async {
         let fireDate = r.context.window.recommendedDeparture ?? Date()
         await service.scheduleLeaveReminder(
             at: fireDate,
             title: leaveNotificationTitle(for: r),
             body: "\(r.route.label) • ETA \(r.variance.etaP50Minutes) min (P50)"
         )
-        return true
-    }
-
-    /// Used by background refresh: only nudge when the user should leave now/soon.
-    func notifyIfDepartureImminent() async {
-        guard let r = rec else { return }
-        switch r.decision {
-        case .leaveNow, .leaveInMinutes, .takeFallback:
-            _ = await scheduleLeaveReminder()
-        case .wait:
-            break
-        }
     }
 
     private func leaveNotificationTitle(for r: Recommendation) -> String {
