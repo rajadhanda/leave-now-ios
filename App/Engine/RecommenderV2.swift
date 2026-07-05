@@ -168,14 +168,6 @@ struct RecommenderV2 {
     }
 
     private func worstDisruption(_ disruptions: [Disruption]) -> Disruption? {
-        disruptions.max { severityRank($0.severity) < severityRank($1.severity) }
-    }
-
-    private func severityRank(_ severity: DisruptionSeverity) -> Int {
-        switch severity {
-        case .minor: return 1
-        case .moderate: return 2
-        case .severe: return 3
-        }
+        disruptions.max { $0.severity.rank < $1.severity.rank }
     }
 }

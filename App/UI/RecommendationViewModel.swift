@@ -34,11 +34,24 @@ final class RecommendationViewModel: ObservableObject {
 
     private let prefs = UserPrefs.shared
     private var history: TripHistoryStore
+    /// Test seam: replaces the live pipeline (and bypasses mock mode) so the
+    /// TTL cache can be exercised without any network.
+    private let liveFetchOverride: (() async throws -> Recommendation)?
+
+    /// Last live result, reused while its `ttlSeconds` holds for the same trip.
+    private struct CachedRecommendation {
+        let tripKey: String
+        let rec: Recommendation
+        let fetchedAt: Date
+    }
+    private var cached: CachedRecommendation?
 
     init(rec: Recommendation? = nil,
-         history: TripHistoryStore = JSONTripHistoryStore.shared) {
+         history: TripHistoryStore = JSONTripHistoryStore.shared,
+         liveFetch: (() async throws -> Recommendation)? = nil) {
         self.rec = rec
         self.history = history
+        self.liveFetchOverride = liveFetch
         self.pendingTrip = try? history.pendingTrip()
     }
 
@@ -52,7 +65,7 @@ final class RecommendationViewModel: ObservableObject {
         defer { isLoading = false }
 
         // Deterministic offline mode for UI work: never touch the network.
-        if Self.isMockMode {
+        if liveFetchOverride == nil, Self.isMockMode {
             rec = Self.mockRecommendation()
             source = .sample(.mockMode)
             statusMessage = "Mock mode (MOCK_DATA=YES)."
@@ -60,10 +73,27 @@ final class RecommendationViewModel: ObservableObject {
             return
         }
 
-        do {
-            rec = try await buildLiveRecommendation()
+        // Honour ttlSeconds: a re-foreground or manual refresh within the TTL
+        // reuses the last live result for the same trip instead of re-hitting
+        // TfL/RTT — this is also what protects their rate limits.
+        if let cached, cached.tripKey == tripKey,
+           Date().timeIntervalSince(cached.fetchedAt) < TimeInterval(cached.rec.ttlSeconds) {
+            rec = cached.rec
             source = .live
-            if let r = rec { capturePendingTrip(for: r) }
+            return
+        }
+
+        do {
+            let fresh: Recommendation
+            if let liveFetchOverride {
+                fresh = try await liveFetchOverride()
+            } else {
+                fresh = try await buildLiveRecommendation()
+            }
+            rec = fresh
+            source = .live
+            cached = CachedRecommendation(tripKey: tripKey, rec: fresh, fetchedAt: Date())
+            capturePendingTrip(for: fresh)
         } catch {
             // Show clearly-labelled sample data rather than silently presenting
             // mock output as if it were live. A missing TfL key is a soft
@@ -83,6 +113,12 @@ final class RecommendationViewModel: ObservableObject {
     /// Both schemes set MOCK_DATA (Debug=YES, Release=NO); see project.yml.
     private static var isMockMode: Bool {
         ProcessInfo.processInfo.environment["MOCK_DATA"] == "YES"
+    }
+
+    /// Cache identity: a different trip must never reuse a cached result.
+    private var tripKey: String {
+        let arrive = prefs.arriveByEnabled ? String(prefs.arriveBy.timeIntervalSinceReferenceDate) : "now"
+        return "\(prefs.originPostcode)|\(prefs.destinationPostcode)|\(arrive)"
     }
 
     // MARK: - Outcome capture (charter loop)
@@ -455,11 +491,7 @@ final class RecommendationViewModel: ObservableObject {
         return max(Int(round(ts.timeIntervalSinceNow / 60.0)), 0)
     }
 
-    private static let timeFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateFormat = "HH:mm"
-        return df
-    }()
+    private static let timeFormatter = DateFormatter.fixed(format: "HH:mm")
 
     // MARK: - Sample fallback
 

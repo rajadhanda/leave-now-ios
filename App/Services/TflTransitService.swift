@@ -18,12 +18,8 @@ struct TflTransitService {
         let appKey = Secrets.tflAppKey
         if !appKey.isEmpty { items.append(.init(name: "app_key", value: appKey)) }
         // Use departure time to the nearest minute
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd"
-        let timeFormatter = DateFormatter()
-        timeFormatter.dateFormat = "HHmm"
-        items.append(.init(name: "date", value: dateFormatter.string(from: departure)))
-        items.append(.init(name: "time", value: timeFormatter.string(from: departure)))
+        items.append(.init(name: "date", value: Self.queryDateFormatter.string(from: departure)))
+        items.append(.init(name: "time", value: Self.queryTimeFormatter.string(from: departure)))
         comps.queryItems = items
 
         guard let url = comps.url else { throw URLError(.badURL) }
@@ -41,6 +37,11 @@ struct TflTransitService {
     static func plans(fromJourneyData data: Data) throws -> [JourneyPlan] {
         try JSONDecoder().decode(JourneyResultsDTO.self, from: data).toPlans()
     }
+
+    // Cached: never build a DateFormatter per request. TfL expects local
+    // wall-clock date/time for the journey query, hence .current timezone.
+    private static let queryDateFormatter = DateFormatter.fixed(format: "yyyyMMdd")
+    private static let queryTimeFormatter = DateFormatter.fixed(format: "HHmm")
 
     /// Current line-status disruptions, keyed by lowercased line id (e.g. "northern").
     /// Lines with a good service are omitted. Defaults to the rail-like modes that
@@ -65,7 +66,7 @@ struct TflTransitService {
             let severities = (line.lineStatuses ?? []).compactMap {
                 mapTfLSeverity($0.statusSeverity ?? 10, $0.statusSeverityDescription ?? "")
             }
-            guard let worst = severities.max(by: { tflSeverityRank($0) < tflSeverityRank($1) }) else { return nil }
+            guard let worst = severities.max(by: { $0.rank < $1.rank }) else { return nil }
             return Disruption(lineId: id.lowercased(), affectedStations: [], severity: worst)
         }
     }
@@ -95,14 +96,6 @@ private func mapTfLSeverity(_ severity: Int, _ description: String) -> Disruptio
         return .severe
     }
     return .moderate
-}
-
-private func tflSeverityRank(_ severity: DisruptionSeverity) -> Int {
-    switch severity {
-    case .minor: return 1
-    case .moderate: return 2
-    case .severe: return 3
-    }
 }
 
 // MARK: - Decoding (tolerant, minimal fields)

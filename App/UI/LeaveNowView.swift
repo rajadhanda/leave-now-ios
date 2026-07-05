@@ -53,10 +53,10 @@ struct LeaveNowView: View {
         .buttonStyle(.plain)
     }
 
+    private static let arriveByFormatter = DateFormatter.fixed(format: "HH:mm")
+
     private var arriveByText: String {
-        let df = DateFormatter()
-        df.dateFormat = "HH:mm"
-        return df.string(from: UserPrefs.shared.arriveBy)
+        Self.arriveByFormatter.string(from: UserPrefs.shared.arriveBy)
     }
 }
 
