@@ -77,6 +77,7 @@ struct NationalRailLegUpdater {
                     let updatedLeg = RouteLeg(
                         mode: leg.mode,
                         lineId: leg.lineId,
+                        lineName: leg.lineName,
                         fromStation: leg.fromStation,
                         toStation: leg.toStation,
                         durationMinutes: durationMinutes

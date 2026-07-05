@@ -232,7 +232,8 @@ final class RecommendationViewModel: ObservableObject {
     }
 
     private func routeAdvice(from rec: EngineRecommendation, isFallback: Bool) -> RouteAdvice {
-        let lines = rec.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
+        // Labels show human line names; the fingerprint keeps canonical ids.
+        let lines = rec.plan.legs.compactMap { $0.lineName ?? $0.lineId }.filter { !$0.isEmpty }
         let label = lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
         return RouteAdvice(
             label: label,
@@ -246,7 +247,7 @@ final class RecommendationViewModel: ObservableObject {
     }
 
     private func legSummaries(_ plan: JourneyPlan) -> [RouteLegSummary] {
-        plan.legs.map { RouteLegSummary(type: mapMode($0.mode), lineOrService: $0.lineId, approxMinutes: $0.durationMinutes) }
+        plan.legs.map { RouteLegSummary(type: mapMode($0.mode), lineOrService: $0.lineName ?? $0.lineId, approxMinutes: $0.durationMinutes) }
     }
 
     /// Human-readable "where to start" hint from the first transit leg.
@@ -254,7 +255,7 @@ final class RecommendationViewModel: ObservableObject {
         guard let leg = plan.legs.first(where: { $0.mode != .walk }) else { return nil }
         let name = (leg.fromStation?.isEmpty == false) ? leg.fromStation : nil
         let toward = (leg.toStation?.isEmpty == false) ? leg.toStation : nil
-        let line = (leg.lineId?.isEmpty == false) ? leg.lineId : nil
+        let line = [leg.lineName, leg.lineId].compactMap { $0 }.first { !$0.isEmpty }
         let mode = modeLabel(leg.mode)
         if let name { return "\(mode) from: \(name)" }
         if let line, let toward { return "\(mode): take \(line) towards \(toward)" }

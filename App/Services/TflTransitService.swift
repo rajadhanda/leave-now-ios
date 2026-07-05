@@ -33,8 +33,13 @@ struct TflTransitService {
         guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
-        let dto = try JSONDecoder.tfl.decode(JourneyResultsDTO.self, from: data)
-        return dto.toPlans()
+        return try Self.plans(fromJourneyData: data)
+    }
+
+    /// Decodes a TfL `journeyresults` payload into plans. Internal (not
+    /// private) so tests exercise the real decoder against canned fixtures.
+    static func plans(fromJourneyData data: Data) throws -> [JourneyPlan] {
+        try JSONDecoder().decode(JourneyResultsDTO.self, from: data).toPlans()
     }
 
     /// Current line-status disruptions, keyed by lowercased line id (e.g. "northern").
@@ -119,8 +124,19 @@ private struct JourneyResultsDTO: Decodable {
 
     struct ModeDTO: Decodable { let id: String? }
     struct PathDTO: Decodable { let stopPoints: [StopPointDTO]? }
-    struct StopPointDTO: Decodable { let name: String? }
-    struct RouteOptionDTO: Decodable { let name: String? }
+    // TfL points carry commonName; some responses also include a plain name.
+    struct StopPointDTO: Decodable {
+        let name: String?
+        let commonName: String?
+        var displayName: String? { commonName ?? name }
+    }
+    // routeOptions[].name is a human route description ("Northern - via Bank");
+    // the canonical line id lives at routeOptions[].lineIdentifier.id.
+    struct RouteOptionDTO: Decodable {
+        let name: String?
+        let lineIdentifier: LineIdentifierDTO?
+        struct LineIdentifierDTO: Decodable { let id: String?; let name: String? }
+    }
 }
 
 private extension JourneyResultsDTO {
@@ -138,11 +154,18 @@ private extension JourneyResultsDTO {
                 case "national-rail": legMode = .nationalRail
                 default: legMode = .walk
                 }
-                let line = l.routeOptions?.first?.name
-                let fromName = l.departurePoint?.name
-                let toName = l.arrivalPoint?.name
+                let option = l.routeOptions?.first
+                let lineId = option?.lineIdentifier?.id?.lowercased()
+                let lineName = option?.lineIdentifier?.name ?? option?.name
+                let fromName = l.departurePoint?.displayName
+                let toName = l.arrivalPoint?.displayName
                 let minutes = max(1, l.duration ?? 0)
-                return RouteLeg(mode: legMode, lineId: line, fromStation: fromName, toStation: toName, durationMinutes: minutes)
+                return RouteLeg(mode: legMode,
+                                lineId: lineId,
+                                lineName: lineName,
+                                fromStation: fromName,
+                                toStation: toName,
+                                durationMinutes: minutes)
             }
             if legs.isEmpty { return nil }
             return JourneyPlan(legs: legs)
@@ -150,12 +173,5 @@ private extension JourneyResultsDTO {
     }
 }
 
-private extension JSONDecoder {
-    static var tfl: JSONDecoder {
-        let d = JSONDecoder()
-        d.keyDecodingStrategy = .convertFromSnakeCase
-        return d
-    }
-}
 
 
