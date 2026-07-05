@@ -147,7 +147,9 @@ private extension JourneyResultsDTO {
                 case "national-rail": legMode = .nationalRail
                 default: legMode = .walk
                 }
-                let option = l.routeOptions?.first
+                // Walking legs have no line; their routeOptions name is a
+                // street directive, not something to label or match on.
+                let option = legMode == .walk ? nil : l.routeOptions?.first
                 let lineId = option?.lineIdentifier?.id?.lowercased()
                 let lineName = option?.lineIdentifier?.name ?? option?.name
                 let fromName = l.departurePoint?.displayName

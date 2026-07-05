@@ -114,8 +114,13 @@ struct LocationLineUpDTO: Decodable {
         let uniqueIdentity: String?             // e.g. "gb-nr:L01525:2025-10-26"
         let identity: String?
         let departureDate: String?              // "yyyy-MM-dd"
-        let `operator`: OperatorDTO?
+        let operatorInfo: OperatorDTO?          // JSON key "operator" (Swift keyword)
         struct OperatorDTO: Decodable { let code: String?; let name: String? }
+
+        enum CodingKeys: String, CodingKey {
+            case uniqueIdentity, identity, departureDate
+            case operatorInfo = "operator"
+        }
     }
 
     struct LocationPairDTO: Decodable {
@@ -149,7 +154,7 @@ extension LocationLineUpDTO.ServiceDTO {
 
         let platform = locationMetadata?.platform
         return RailLegMeta(
-            operatorName: scheduleMetadata?.operator?.name,
+            operatorName: scheduleMetadata?.operatorInfo?.name,
             serviceId: scheduleMetadata?.uniqueIdentity,
             headcode: nil, // only the /gb-nr namespace exposes a train reporting identity
             origin: .init(crs: originCRS, name: origin?.first?.location?.description ?? originCRS),

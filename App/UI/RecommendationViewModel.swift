@@ -343,8 +343,12 @@ final class RecommendationViewModel: ObservableObject {
     }
 
     private func routeAdvice(from rec: EngineRecommendation, isFallback: Bool) -> RouteAdvice {
-        // Labels show human line names; the fingerprint keeps canonical ids.
-        let lines = rec.plan.legs.compactMap { $0.lineName ?? $0.lineId }.filter { !$0.isEmpty }
+        // Labels show human line names for transit legs only; the fingerprint
+        // keeps canonical ids.
+        let lines = rec.plan.legs
+            .filter { $0.mode != .walk }
+            .compactMap { $0.lineName ?? $0.lineId }
+            .filter { !$0.isEmpty }
         let label = lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
         return RouteAdvice(
             label: label,

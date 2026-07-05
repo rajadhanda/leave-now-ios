@@ -44,6 +44,12 @@ final class TflJourneyDecodingTests: XCTestCase {
         XCTAssertEqual(tubeLeg.lineName, "Northern")
         XCTAssertEqual(tubeLeg.fromStation, "Moorgate Underground Station")
         XCTAssertEqual(tubeLeg.durationMinutes, 14)
+
+        // Walking legs carry no line: their routeOptions name is a street
+        // directive, which must not leak into labels or matching.
+        let walkLeg = try XCTUnwrap(plans.first?.legs.first { $0.mode == .walk })
+        XCTAssertNil(walkLeg.lineId)
+        XCTAssertNil(walkLeg.lineName)
     }
 
     func testDisruptionMatchesByCanonicalLineIdOnly() throws {
