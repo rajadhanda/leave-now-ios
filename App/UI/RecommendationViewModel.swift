@@ -186,7 +186,7 @@ final class RecommendationViewModel: ObservableObject {
                                     rainEnd: Date?,
                                     disruptions: [Disruption],
                                     now: Date) -> Recommendation {
-        let confidenceLevel: ConfidenceLevel = best.confidence > 0.75 ? .high : (best.confidence > 0.5 ? .medium : .low)
+        let confidenceLevel = ConfidenceModel.level(spreadMinutes: best.p90Minutes - best.p50Minutes)
         var limiting: [LimitingFactor] = []
         if (rain ?? 0) > 0.1 { limiting.append(.weatherImpact) }
         if best.severeDisruption { limiting.append(.severeDisruptionNearby) }

@@ -38,8 +38,11 @@ final class UserPrefs {
 
     // MARK: - Sensitivity & scoring weights
 
+    /// Rain sensitivity `k` in the walking penalty (see
+    /// `DefaultETAEstimator.applyWeatherPenalty`). 0.5 hits the calibration
+    /// target of ~+2m light / ~+4m heavy rain on a 10-minute walk.
     var rainSensitivity: Double {
-        get { read(Keys.rainSensitivity, default: 0.08) }
+        get { read(Keys.rainSensitivity, default: 0.5) }
         set { defaults.set(newValue, forKey: Keys.rainSensitivity) }
     }
 

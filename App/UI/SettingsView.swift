@@ -10,7 +10,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Sensitivity") {
-                labeledSlider("Rain sensitivity", value: $rainSensitivity, range: 0.05...0.12, step: 0.01) {
+                labeledSlider("Rain sensitivity", value: $rainSensitivity, range: 0...1, step: 0.05) {
                     UserPrefs.shared.rainSensitivity = $0
                 }
             }
