@@ -1,8 +1,22 @@
 import Foundation
 import CoreLocation
 
-/// Where the currently-displayed recommendation came from.
-enum DataSource { case live, sample }
+/// Where the currently-displayed recommendation came from. Sample data always
+/// carries the reason, so the UI can distinguish "deliberate mock mode" from
+/// "keys missing" from "services down" instead of silently looking live.
+enum DataSource: Equatable {
+    case live
+    case sample(SampleDataReason)
+}
+
+enum SampleDataReason: Equatable {
+    /// The MOCK_DATA=YES environment variable forced the deterministic mock path.
+    case mockMode
+    /// Live fetch failed and no TfL key is configured — likely misconfiguration.
+    case keysMissing
+    /// Keys look configured but the live services could not be reached.
+    case servicesFailed
+}
 
 /// Owns the recommendation pipeline (services -> engine -> decision -> UI model)
 /// and the strings the card renders. Kept on the main actor so `@Published`
@@ -27,16 +41,37 @@ final class RecommendationViewModel: ObservableObject {
         isLoading = true
         statusMessage = nil
         defer { isLoading = false }
+
+        // Deterministic offline mode for UI work: never touch the network.
+        if Self.isMockMode {
+            rec = Self.mockRecommendation()
+            source = .sample(.mockMode)
+            statusMessage = "Mock mode (MOCK_DATA=YES)."
+            return
+        }
+
         do {
             rec = try await buildLiveRecommendation()
             source = .live
         } catch {
             // Show clearly-labelled sample data rather than silently presenting
-            // mock output as if it were live.
+            // mock output as if it were live. A missing TfL key is a soft
+            // warning (the keyless path can still work, rate-limited), so it
+            // only changes the diagnosis once the live fetch has failed.
             rec = Self.mockRecommendation()
-            source = .sample
-            statusMessage = "Showing sample data — couldn't reach live services."
+            if Secrets.tflAppKey.isEmpty {
+                source = .sample(.keysMissing)
+                statusMessage = "Sample data — couldn't reach live services. No TfL key is configured (keyless access is rate-limited), so keys may be missing."
+            } else {
+                source = .sample(.servicesFailed)
+                statusMessage = "Sample data — couldn't reach live services."
+            }
         }
+    }
+
+    /// Both schemes set MOCK_DATA (Debug=YES, Release=NO); see project.yml.
+    private static var isMockMode: Bool {
+        ProcessInfo.processInfo.environment["MOCK_DATA"] == "YES"
     }
 
     private func buildLiveRecommendation() async throws -> Recommendation {

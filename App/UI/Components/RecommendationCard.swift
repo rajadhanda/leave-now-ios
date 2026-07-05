@@ -9,7 +9,7 @@ struct RecommendationCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if vm.source == .sample, let msg = vm.statusMessage {
+            if case .sample = vm.source, let msg = vm.statusMessage {
                 Label(msg, systemImage: "exclamationmark.triangle.fill")
                     .font(.footnote)
                     .padding(8)
