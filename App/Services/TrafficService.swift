@@ -1,5 +1,10 @@
 import Foundation
 
+// INACTIVE SUBSYSTEM: TfL journey planner never emits .car legs, so nothing
+// here can run in v1. It stays gated behind `AppConfig.trafficEnabled`
+// (currently false) until a car-routing origin exists — e.g. a synthesised
+// "drive" plan from origin/destination coordinates.
+
 /// Traffic information for a car route
 public struct TrafficInfo {
     public let baseDurationMinutes: Int
@@ -31,6 +36,17 @@ public enum TrafficLevel: String, Codable {
     case moderate    // Some congestion
     case heavy       // Significant delays
     case severe      // Major delays, gridlock
+
+    /// Buckets a live delay into a level by its share of total duration.
+    /// Shared by all providers so they classify congestion identically.
+    static func forDelay(delayMinutes: Int, durationMinutes: Int) -> TrafficLevel {
+        guard durationMinutes > 0 else { return .light }
+        let delayPercentage = Double(delayMinutes) / Double(durationMinutes)
+        if delayPercentage > 0.5 { return .severe }
+        if delayPercentage > 0.3 { return .heavy }
+        if delayPercentage > 0.1 { return .moderate }
+        return .light
+    }
 }
 
 public struct RoadClosure: Codable {
@@ -56,8 +72,9 @@ public protocol TrafficService {
     func trafficInfo(from: GeoPoint, to: GeoPoint, departureTime: Date?) async throws -> TrafficInfo
 }
 
+// Inactive: no car legs are produced in v1.
 /// HERE API implementation for traffic data
-/// 
+///
 /// Uses HERE Routing API v8 with real-time traffic
 /// Documentation: https://developer.here.com/documentation/routing-api/8.17.0/dev_guide/index.html
 /// Free tier limits: ~5,000 requests/month
@@ -176,7 +193,7 @@ public struct HereTrafficService: TrafficService {
         let trafficDelayMinutes = max(0, durationMinutes - estimatedBaseDurationMinutes)
         
         // Determine traffic level based on delay
-        let trafficLevel = determineTrafficLevel(delayMinutes: trafficDelayMinutes, durationMinutes: durationMinutes)
+        let trafficLevel = TrafficLevel.forDelay(delayMinutes: trafficDelayMinutes, durationMinutes: durationMinutes)
         
         // Extract incidents/events from actions
         var closures: [RoadClosure] = []
@@ -207,21 +224,6 @@ public struct HereTrafficService: TrafficService {
             hasIncidents: hasIncidents
         )
     }
-    
-    private func determineTrafficLevel(delayMinutes: Int, durationMinutes: Int) -> TrafficLevel {
-        guard durationMinutes > 0 else { return .light }
-        let delayPercentage = Double(delayMinutes) / Double(durationMinutes)
-        
-        if delayPercentage > 0.5 {
-            return .severe
-        } else if delayPercentage > 0.3 {
-            return .heavy
-        } else if delayPercentage > 0.1 {
-            return .moderate
-        } else {
-            return .light
-        }
-    }
 }
 
 public enum TrafficServiceError: Error {
@@ -231,8 +233,9 @@ public enum TrafficServiceError: Error {
     case apiKeyMissing
 }
 
+// Inactive: no car legs are produced in v1.
 /// Google Maps Directions API implementation (alternative)
-/// 
+///
 /// Uses Google Directions API with traffic_model parameter
 /// Documentation: https://developers.google.com/maps/documentation/directions
 public struct GoogleTrafficService: TrafficService {
@@ -291,7 +294,7 @@ public struct GoogleTrafficService: TrafficService {
         let trafficDelayMinutes = max(0, durationInTrafficMinutes - baseDurationMinutes)
         
         // Determine traffic level
-        let trafficLevel = determineTrafficLevel(delayMinutes: trafficDelayMinutes, durationMinutes: durationInTrafficMinutes)
+        let trafficLevel = TrafficLevel.forDelay(delayMinutes: trafficDelayMinutes, durationMinutes: durationInTrafficMinutes)
         
         // Check for incidents/road closures (available in Google Maps API)
         var closures: [RoadClosure] = []
@@ -319,20 +322,5 @@ public struct GoogleTrafficService: TrafficService {
             roadClosures: closures,
             hasIncidents: hasIncidents
         )
-    }
-    
-    private func determineTrafficLevel(delayMinutes: Int, durationMinutes: Int) -> TrafficLevel {
-        guard durationMinutes > 0 else { return .light }
-        let delayPercentage = Double(delayMinutes) / Double(durationMinutes)
-        
-        if delayPercentage > 0.5 {
-            return .severe
-        } else if delayPercentage > 0.3 {
-            return .heavy
-        } else if delayPercentage > 0.1 {
-            return .moderate
-        } else {
-            return .light
-        }
     }
 }

@@ -41,11 +41,14 @@ final class SecretsConfigTests: XCTestCase {
         XCTAssertEqual(secrets.realtimeTrainsBaseURL?.absoluteString, "https://data.rtt.io")
         XCTAssertEqual(secrets.realtimeTrainsToken, "token-123")
         XCTAssertEqual(AppConfig.railProvider(secrets: secrets), .realtimeTrains)
-        XCTAssertEqual(AppConfig.trafficProvider(secrets: secrets), .here)
+        // Traffic is shelved in v1 (no car legs exist); the selection logic
+        // still has to be right for when the switch is flipped.
+        XCTAssertEqual(AppConfig.trafficProvider(secrets: secrets), .none)
+        XCTAssertEqual(AppConfig.trafficProvider(secrets: secrets, enabled: true), .here)
     }
 
     func testGoogleIsFallbackTrafficProvider() {
         let secrets = SecretsStore(dict: [Config.googleMapsApiKeyKey: "g-key"])
-        XCTAssertEqual(AppConfig.trafficProvider(secrets: secrets), .google)
+        XCTAssertEqual(AppConfig.trafficProvider(secrets: secrets, enabled: true), .google)
     }
 }
