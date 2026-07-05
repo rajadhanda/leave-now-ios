@@ -28,10 +28,19 @@ final class RecommendationViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var source: DataSource = .live
     @Published private(set) var statusMessage: String?
+    /// The captured prediction awaiting its outcome (drives "I've left" /
+    /// "I've arrived" and the post-trip feedback).
+    @Published private(set) var pendingTrip: PendingTrip?
 
     private let prefs = UserPrefs.shared
+    private var history: TripHistoryStore
 
-    init(rec: Recommendation? = nil) { self.rec = rec }
+    init(rec: Recommendation? = nil,
+         history: TripHistoryStore = JSONTripHistoryStore.shared) {
+        self.rec = rec
+        self.history = history
+        self.pendingTrip = try? history.pendingTrip()
+    }
 
     func bind(_ r: Recommendation) { self.rec = r }
 
@@ -47,12 +56,14 @@ final class RecommendationViewModel: ObservableObject {
             rec = Self.mockRecommendation()
             source = .sample(.mockMode)
             statusMessage = "Mock mode (MOCK_DATA=YES)."
+            if let r = rec { capturePendingTrip(for: r) }
             return
         }
 
         do {
             rec = try await buildLiveRecommendation()
             source = .live
+            if let r = rec { capturePendingTrip(for: r) }
         } catch {
             // Show clearly-labelled sample data rather than silently presenting
             // mock output as if it were live. A missing TfL key is a soft
@@ -72,6 +83,60 @@ final class RecommendationViewModel: ObservableObject {
     /// Both schemes set MOCK_DATA (Debug=YES, Release=NO); see project.yml.
     private static var isMockMode: Bool {
         ProcessInfo.processInfo.environment["MOCK_DATA"] == "YES"
+    }
+
+    // MARK: - Outcome capture (charter loop)
+
+    /// Charter auto-capture: persist the prediction snapshot so the post-trip
+    /// outcome can be scored against it. A trip already in flight (the user
+    /// tapped "I've left") is never replaced by a newer recommendation.
+    private func capturePendingTrip(for r: Recommendation) {
+        if let inFlight = try? history.pendingTrip(), inFlight.actualDeparture != nil {
+            pendingTrip = inFlight
+            return
+        }
+        let trip = PendingTrip(id: r.id,
+                               createdAt: r.generatedAt,
+                               recommendedDeparture: r.context.window.recommendedDeparture,
+                               routeFingerprint: r.route.fingerprint,
+                               routeLabel: r.route.label,
+                               predictedP50Minutes: r.variance.etaP50Minutes,
+                               predictedP90Minutes: r.variance.etaP90Minutes,
+                               actualDeparture: nil)
+        try? history.savePending(trip)
+        pendingTrip = trip
+    }
+
+    /// "I've left": stamps the actual departure on the pending trip.
+    func markDeparted() {
+        try? history.markDeparted(at: Date())
+        pendingTrip = try? history.pendingTrip()
+    }
+
+    /// "I've arrived" + one-tap feedback: archives the outcome against the
+    /// captured prediction and pokes the calibration seam.
+    func recordOutcome(followedRoute: Bool,
+                       judgement: ArrivalJudgement?,
+                       intent: DeviationIntent?) {
+        guard let trip = pendingTrip else { return }
+        let now = Date()
+        let started = trip.actualDeparture ?? trip.createdAt
+        let outcome = OutcomeEvent(
+            id: UUID(),
+            recommendationId: trip.id,
+            startedAt: started,
+            endedAt: now,
+            actualDurationMinutes: max(0, Int(round(now.timeIntervalSince(started) / 60.0))),
+            followedRoute: followedRoute,
+            departureDeltaMinutes: trip.recommendedDeparture.map {
+                Int(round(started.timeIntervalSince($0) / 60.0))
+            } ?? 0,
+            userArrivalJudgement: followedRoute ? judgement : nil,
+            deviationIntent: followedRoute ? nil : intent
+        )
+        try? history.save(outcome: outcome)
+        pendingTrip = try? history.pendingTrip()
+        OutcomeCalibrator.recalibrate(from: (try? history.recentTrips(limit: 100)) ?? [])
     }
 
     private func buildLiveRecommendation() async throws -> Recommendation {
