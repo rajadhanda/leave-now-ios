@@ -4,12 +4,13 @@ struct RecommendationCard: View {
     @ObservedObject var vm: RecommendationViewModel
     @State private var showFallback = false
     @State private var reminder: ReminderState = .idle
+    @State private var showTripFeedback = false
 
     private enum ReminderState: Equatable { case idle, scheduled, denied }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if vm.source == .sample, let msg = vm.statusMessage {
+            if case .sample = vm.source, let msg = vm.statusMessage {
                 Label(msg, systemImage: "exclamationmark.triangle.fill")
                     .font(.footnote)
                     .padding(8)
@@ -54,6 +55,7 @@ struct RecommendationCard: View {
                 .foregroundStyle(.secondary)
 
             reminderButton
+            tripProgressButton
 
             if vm.hasFallback {
                 Divider()
@@ -78,6 +80,34 @@ struct RecommendationCard: View {
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(radius: 1)
+        .sheet(isPresented: $showTripFeedback) {
+            TripFeedbackView(vm: vm)
+        }
+    }
+
+    /// Outcome capture (charter loop): "I've left" stamps the departure,
+    /// "I've arrived" opens the one-tap feedback.
+    @ViewBuilder
+    private var tripProgressButton: some View {
+        if let trip = vm.pendingTrip {
+            if trip.actualDeparture == nil {
+                Button {
+                    vm.markDeparted()
+                } label: {
+                    Label("I've left", systemImage: "figure.walk")
+                        .font(.callout)
+                }
+                .buttonStyle(.bordered)
+            } else {
+                Button {
+                    showTripFeedback = true
+                } label: {
+                    Label("I've arrived", systemImage: "checkmark.circle")
+                        .font(.callout)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
     }
 
     @ViewBuilder

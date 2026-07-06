@@ -1,127 +1,170 @@
 import Foundation
 
+/// Client for the next-generation RealtimeTrains API (https://data.rtt.io),
+/// spec: https://realtimetrains.github.io/api-specification. The legacy
+/// api.rtt.io Basic-auth API shuts down 30 September 2026 and is not used.
+///
+/// DEV-ONLY: RTT's terms forbid embedding an API token in a distributed
+/// end-user app; production use must proxy requests server-side. The service
+/// only activates when the git-ignored `Secrets.plist` provides both
+/// REALTIMETRAINS_BASE_URL and a REALTIMETRAINS_TOKEN — no shipped build may
+/// carry a real token, so release builds get a nil service and rail
+/// enrichment is a clean no-op.
 struct RealtimeTrainsService: NationalRailService {
     private let session: URLSession
     private let baseURL: URL
-    private let apiKey: String?
-    private let basicUsername: String?
-    private let basicPassword: String?
+    private let token: String
 
-    init?(session: URLSession = .shared) {
-        guard let baseURL = RTTSecrets.realtimeTrainsBaseURL,
-              (RTTSecrets.realtimeTrainsApiKey != nil || (!Secrets.rttUsername.isEmpty && !Secrets.rttPassword.isEmpty)) else { return nil }
+    init?(session: URLSession = .shared,
+          baseURL: URL? = Secrets.realtimeTrainsBaseURL,
+          token: String? = Secrets.realtimeTrainsToken) {
+        guard let baseURL, let token, !token.isEmpty else { return nil }
         self.session = session
         self.baseURL = baseURL
-        self.apiKey = RTTSecrets.realtimeTrainsApiKey
-        self.basicUsername = Secrets.rttUsername.isEmpty ? nil : Secrets.rttUsername
-        self.basicPassword = Secrets.rttPassword.isEmpty ? nil : Secrets.rttPassword
+        self.token = token
     }
 
+    /// One `GET /rtt/location` line-up per rail leg. `filterTo` restricts the
+    /// line-up to services that subsequently call at the destination.
+    ///
+    /// RTT rate limits are 30 req/min and 750 req/hr; the updater already
+    /// makes at most one call per rail leg and `limit` is capped here, so no
+    /// request loop can run unbounded.
     func nextServices(from originCRS: String, to destCRS: String, around when: Date, limit: Int) async throws -> [RailLegMeta] {
-        var comps = URLComponents(url: baseURL.appendingPathComponent("/v1/next"), resolvingAgainstBaseURL: false)!
+        var comps = URLComponents(url: baseURL.appendingPathComponent("/rtt/location"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
-            .init(name: "from", value: originCRS),
-            .init(name: "to", value: destCRS),
-            .init(name: "at", value: iso8601Minute(when)),
-            .init(name: "limit", value: String(limit))
+            .init(name: "code", value: originCRS),
+            .init(name: "filterTo", value: destCRS),
+            .init(name: "timeFrom", value: Self.queryTimeFormatter.string(from: when))
         ]
-        var req = URLRequest(url: comps.url!)
-        if let apiKey = apiKey {
-            req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        } else if let u = basicUsername, let p = basicPassword {
-            let token = Data("\(u):\(p)".utf8).base64EncodedString()
-            req.setValue("Basic \(token)", forHTTPHeaderField: "Authorization")
-        }
+        guard let url = comps.url else { throw URLError(.badURL) }
+        var req = URLRequest(url: url)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
-        let dto = try JSONDecoder.rtt.decode(RTTResponse.self, from: data)
-        return dto.services.prefix(limit).compactMap { $0.asRailLegMeta() }
+        return try Self.railLegMetas(from: data, originCRS: originCRS, destCRS: destCRS, limit: min(max(limit, 1), 5))
     }
 
-    private func iso8601Minute(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.locale = .init(identifier: "en_GB")
-        f.dateFormat = "yyyy-MM-dd'T'HH:mm"
-        return f.string(from: d)
-    }
-}
+    // MARK: - Decoding
 
-// MARK: - Tolerant decoding
-private struct RTTResponse: Decodable {
-    let services: [RTTService]
-
-    struct RTTService: Decodable {
-        let operatorName: String?
-        let serviceId: String?
-        let headcode: String?
-        let originCRS: String?
-        let originName: String?
-        let destCRS: String?
-        let destName: String?
-        let std: String?
-        let sta: String?
-        let etd: String?
-        let eta: String?
-        let platform: String?
-
-        let locationDetail: LocationDetail?
-        struct LocationDetail: Decodable {
-            let platform: String?
-            let crs: String?
-            let tiploc: String?
-            let scheduledTime: String?
-            let realtimeTime: String?
-        }
-
-        func asRailLegMeta() -> RailLegMeta? {
-            let oCRS = originCRS ?? locationDetail?.crs
-            let dCRS = destCRS ?? nil
-            let oName = originName ?? "Origin"
-            let dName = destName ?? "Destination"
-            guard let o = oCRS, let d = dCRS else { return nil }
-
-            guard let depPlanned = TimeParser.parse(std ?? locationDetail?.scheduledTime),
-                  let arrPlanned = TimeParser.parse(sta) else { return nil }
-            let depEst = TimeParser.parse(etd ?? locationDetail?.realtimeTime)
-            let arrEst = TimeParser.parse(eta)
-            let platformResolved = platform ?? locationDetail?.platform
-
-            return RailLegMeta(
-                operatorName: operatorName,
-                serviceId: serviceId,
-                headcode: headcode,
-                origin: .init(crs: o, name: oName),
-                destination: .init(crs: d, name: dName),
-                departure: .init(plannedTime: depPlanned, estimatedTime: depEst, platform: platformResolved),
-                arrival: .init(plannedTime: arrPlanned, estimatedTime: arrEst, platform: nil)
-            )
+    /// Decodes a `/rtt/location` line-up into `RailLegMeta`s. Internal (not
+    /// private) so tests exercise the real decoder against canned fixtures.
+    static func railLegMetas(from data: Data, originCRS: String, destCRS: String, limit: Int) throws -> [RailLegMeta] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601 // next-gen times are ISO-8601 with offset
+        let lineUp = try decoder.decode(LocationLineUpDTO.self, from: data)
+        return (lineUp.services ?? []).prefix(limit).compactMap {
+            $0.asRailLegMeta(originCRS: originCRS, destCRS: destCRS)
         }
     }
+
+    /// `timeFrom` is ISO-8601 with offset, matching the response times.
+    private static let queryTimeFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
 }
 
-private enum TimeParser {
-    static func parse(_ s: String?) -> Date? {
-        guard let s = s else { return nil }
-        let fmts = ["HH:mm", "yyyy-MM-dd'T'HH:mm"]
-        for f in fmts {
-            let df = DateFormatter()
-            df.locale = .init(identifier: "en_GB")
-            df.dateFormat = f
-            if let d = df.date(from: s) { return d }
+// MARK: - Next-gen DTOs (tolerant: every realtime field is optional)
+
+/// Response of `GET /rtt/location`: `{ systemStatus, query, services: [...] }`.
+/// Internal so `@testable` tests decode with the production types.
+struct LocationLineUpDTO: Decodable {
+    let services: [ServiceDTO]?
+
+    struct ServiceDTO: Decodable {
+        let temporalData: TemporalPairDTO?      // at the queried origin
+        let locationMetadata: LocationMetadataDTO?
+        let scheduleMetadata: ScheduleMetadataDTO?
+        let origin: [LocationPairDTO]?
+        let destination: [LocationPairDTO]?     // service's FINAL destination, may differ from filterTo
+    }
+
+    struct TemporalPairDTO: Decodable {
+        let departure: TemporalDTO?
+        let arrival: TemporalDTO?
+    }
+
+    struct TemporalDTO: Decodable {
+        let scheduleAdvertised: Date?           // GBTT advertised time
+        let realtimeForecast: Date?
+        let realtimeActual: Date?
+        let realtimeAdvertisedLateness: Int?    // minutes
+        let realtimeNoReport: Bool?
+
+        var estimated: Date? { realtimeForecast ?? realtimeActual }
+        var best: Date? { estimated ?? scheduleAdvertised }
+    }
+
+    struct LocationMetadataDTO: Decodable {
+        let platform: PlannedActualDTO?
+    }
+
+    struct PlannedActualDTO: Decodable {
+        let planned: String?
+        let forecast: String?
+        let actual: String?
+    }
+
+    struct ScheduleMetadataDTO: Decodable {
+        let uniqueIdentity: String?             // e.g. "gb-nr:L01525:2025-10-26"
+        let identity: String?
+        let departureDate: String?              // "yyyy-MM-dd"
+        let operatorInfo: OperatorDTO?          // JSON key "operator" (Swift keyword)
+        struct OperatorDTO: Decodable { let code: String?; let name: String? }
+
+        enum CodingKeys: String, CodingKey {
+            case uniqueIdentity, identity, departureDate
+            case operatorInfo = "operator"
         }
-        return nil
+    }
+
+    struct LocationPairDTO: Decodable {
+        let location: LocationDTO?
+        let temporalData: TemporalDTO?
+        struct LocationDTO: Decodable {
+            let description: String?
+            let shortCodes: [String]?
+            let longCodes: [String]?
+        }
     }
 }
 
-private extension JSONDecoder {
-    static var rtt: JSONDecoder {
-        let d = JSONDecoder()
-        d.dateDecodingStrategy = .iso8601
-        return d
+extension LocationLineUpDTO.ServiceDTO {
+    /// Maps one line-up entry to `RailLegMeta`.
+    ///
+    /// The line-up's `temporalData` describes the queried origin only, and
+    /// `destination[]` is the service's final destination — not necessarily
+    /// the `filterTo` station. v1 deliberately avoids a second
+    /// `/rtt/service?uniqueIdentity=` call: we use `destination[0]` for the
+    /// arrival only when its `shortCodes` actually contains the requested CRS,
+    /// and otherwise skip the service rather than report a wrong arrival.
+    func asRailLegMeta(originCRS: String, destCRS: String) -> RailLegMeta? {
+        guard let dep = temporalData?.departure, let depPlanned = dep.scheduleAdvertised ?? dep.best else { return nil }
+
+        guard let finalDest = destination?.first,
+              let destCodes = finalDest.location?.shortCodes,
+              destCodes.contains(where: { $0.caseInsensitiveCompare(destCRS) == .orderedSame }),
+              let arr = finalDest.temporalData,
+              let arrPlanned = arr.scheduleAdvertised ?? arr.best else { return nil }
+
+        let platform = locationMetadata?.platform
+        return RailLegMeta(
+            operatorName: scheduleMetadata?.operatorInfo?.name,
+            serviceId: scheduleMetadata?.uniqueIdentity,
+            headcode: nil, // only the /gb-nr namespace exposes a train reporting identity
+            origin: .init(crs: originCRS, name: origin?.first?.location?.description ?? originCRS),
+            destination: .init(crs: destCRS, name: finalDest.location?.description ?? destCRS),
+            departure: .init(plannedTime: depPlanned,
+                             estimatedTime: dep.estimated,
+                             platform: platform?.actual ?? platform?.planned),
+            arrival: .init(plannedTime: arrPlanned,
+                           estimatedTime: arr.estimated,
+                           platform: nil)
+        )
     }
 }
-
-

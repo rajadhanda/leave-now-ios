@@ -12,47 +12,38 @@ enum TrafficProvider {
 }
 
 enum AppConfig {
-    static var railProvider: RailProvider {
-        if RTTSecrets.realtimeTrainsApiKey != nil { return .realtimeTrains }
+    static var railProvider: RailProvider { railProvider(secrets: .main) }
+
+    /// RealtimeTrains needs both a base URL and a Bearer token to be usable.
+    static func railProvider(secrets: SecretsStore) -> RailProvider {
+        if secrets.realtimeTrainsBaseURL != nil, secrets.realtimeTrainsToken != nil {
+            return .realtimeTrains
+        }
         return .none
     }
-    
-    static var trafficProvider: TrafficProvider {
-        if TrafficSecrets.hereApiKey != nil { return .here }
-        if TrafficSecrets.googleApiKey != nil { return .google }
+
+    /// Single switch for the shelved traffic subsystem. TfL journey planner
+    /// never returns car legs, so no traffic provider can produce anything in
+    /// v1; flip this once a car-routing origin (a synthesised "drive" plan)
+    /// exists.
+    static let trafficEnabled = false
+
+    static var trafficProvider: TrafficProvider { trafficProvider(secrets: .main) }
+
+    static func trafficProvider(secrets: SecretsStore, enabled: Bool = trafficEnabled) -> TrafficProvider {
+        guard enabled else { return .none }
+        if secrets.hereApiKey != nil { return .here }
+        if secrets.googleApiKey != nil { return .google }
         return .none
     }
 }
 
-enum RTTSecrets {
-    static var realtimeTrainsBaseURL: URL? {
-        guard let s = Bundle.main.object(forInfoDictionaryKey: "REALTIMETRAINS_BASE_URL") as? String,
-              let url = URL(string: s) else { return nil }
-        return url
-    }
-    static var realtimeTrainsApiKey: String? {
-        Bundle.main.object(forInfoDictionaryKey: "REALTIMETRAINS_API_KEY") as? String
-    }
-}
-
-enum TrafficSecrets {
-    static var hereApiKey: String? {
-        Bundle.main.object(forInfoDictionaryKey: "HERE_API_KEY") as? String
-    }
-    
-    static var googleApiKey: String? {
-        Bundle.main.object(forInfoDictionaryKey: "GOOGLE_MAPS_API_KEY") as? String
-    }
-}
-
-import Foundation
-
-struct Config {
-    static let tflAppIdKey = "TFL_APP_ID"
+/// Key names in `Secrets.plist`.
+enum Config {
     static let tflAppKeyKey = "TFL_APP_KEY"
-    static let openWeatherKey = "OPENWEATHER_API_KEY"
-    static let rttUsernameKey = "REALTIMETRAINS_USERNAME"
-    static let rttPasswordKey = "REALTIMETRAINS_PASSWORD"
-    static let hereApiKey = "HERE_API_KEY"
-    static let googleMapsApiKey = "GOOGLE_MAPS_API_KEY"
+    static let openWeatherKeyKey = "OPENWEATHER_API_KEY"
+    static let rttBaseURLKey = "REALTIMETRAINS_BASE_URL"
+    static let rttTokenKey = "REALTIMETRAINS_TOKEN"
+    static let hereApiKeyKey = "HERE_API_KEY"
+    static let googleMapsApiKeyKey = "GOOGLE_MAPS_API_KEY"
 }

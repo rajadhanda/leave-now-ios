@@ -29,10 +29,6 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
-    <key>REALTIMETRAINS_BASE_URL</key>
-    <string>https://api.realtimetrains.co.uk</string>
-    <key>REALTIMETRAINS_API_KEY</key>
-    <string></string>
     <key>UIBackgroundModes</key>
     <array>
         <string>fetch</string>

@@ -19,7 +19,7 @@ struct ExplanationBuilder {
                    isFastest: Bool) -> String {
         var parts: [String] = []
         if isFastest { parts.append("Fastest median") }
-        parts.append(p90 - p50 <= 3 ? "stable variance" : "±\(p90 - p50)m variance")
+        parts.append(ConfidenceModel.isStable(spreadMinutes: p90 - p50) ? "stable variance" : "±\(p90 - p50)m variance")
         parts.append("\(changes) change\(changes == 1 ? "" : "s")")
         if rainDelta > 0 { parts.append("rain adds +\(rainDelta)m walking") }
         if let line = keyLineName {

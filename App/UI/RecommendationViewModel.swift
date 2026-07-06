@@ -1,8 +1,22 @@
 import Foundation
 import CoreLocation
 
-/// Where the currently-displayed recommendation came from.
-enum DataSource { case live, sample }
+/// Where the currently-displayed recommendation came from. Sample data always
+/// carries the reason, so the UI can distinguish "deliberate mock mode" from
+/// "keys missing" from "services down" instead of silently looking live.
+enum DataSource: Equatable {
+    case live
+    case sample(SampleDataReason)
+}
+
+enum SampleDataReason: Equatable {
+    /// The MOCK_DATA=YES environment variable forced the deterministic mock path.
+    case mockMode
+    /// Live fetch failed and no TfL key is configured — likely misconfiguration.
+    case keysMissing
+    /// Keys look configured but the live services could not be reached.
+    case servicesFailed
+}
 
 /// Owns the recommendation pipeline (services -> engine -> decision -> UI model)
 /// and the strings the card renders. Kept on the main actor so `@Published`
@@ -14,10 +28,32 @@ final class RecommendationViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var source: DataSource = .live
     @Published private(set) var statusMessage: String?
+    /// The captured prediction awaiting its outcome (drives "I've left" /
+    /// "I've arrived" and the post-trip feedback).
+    @Published private(set) var pendingTrip: PendingTrip?
 
     private let prefs = UserPrefs.shared
+    private var history: TripHistoryStore
+    /// Test seam: replaces the live pipeline (and bypasses mock mode) so the
+    /// TTL cache can be exercised without any network.
+    private let liveFetchOverride: (() async throws -> Recommendation)?
 
-    init(rec: Recommendation? = nil) { self.rec = rec }
+    /// Last live result, reused while its `ttlSeconds` holds for the same trip.
+    private struct CachedRecommendation {
+        let tripKey: String
+        let rec: Recommendation
+        let fetchedAt: Date
+    }
+    private var cached: CachedRecommendation?
+
+    init(rec: Recommendation? = nil,
+         history: TripHistoryStore = JSONTripHistoryStore.shared,
+         liveFetch: (() async throws -> Recommendation)? = nil) {
+        self.rec = rec
+        self.history = history
+        self.liveFetchOverride = liveFetch
+        self.pendingTrip = try? history.pendingTrip()
+    }
 
     func bind(_ r: Recommendation) { self.rec = r }
 
@@ -27,16 +63,116 @@ final class RecommendationViewModel: ObservableObject {
         isLoading = true
         statusMessage = nil
         defer { isLoading = false }
-        do {
-            rec = try await buildLiveRecommendation()
+
+        // Deterministic offline mode for UI work: never touch the network.
+        if liveFetchOverride == nil, Self.isMockMode {
+            rec = Self.mockRecommendation()
+            source = .sample(.mockMode)
+            statusMessage = "Mock mode (MOCK_DATA=YES)."
+            if let r = rec { capturePendingTrip(for: r) }
+            return
+        }
+
+        // Honour ttlSeconds: a re-foreground or manual refresh within the TTL
+        // reuses the last live result for the same trip instead of re-hitting
+        // TfL/RTT — this is also what protects their rate limits.
+        if let cached, cached.tripKey == tripKey,
+           Date().timeIntervalSince(cached.fetchedAt) < TimeInterval(cached.rec.ttlSeconds) {
+            rec = cached.rec
             source = .live
+            return
+        }
+
+        do {
+            let fresh: Recommendation
+            if let liveFetchOverride {
+                fresh = try await liveFetchOverride()
+            } else {
+                fresh = try await buildLiveRecommendation()
+            }
+            rec = fresh
+            source = .live
+            cached = CachedRecommendation(tripKey: tripKey, rec: fresh, fetchedAt: Date())
+            capturePendingTrip(for: fresh)
         } catch {
             // Show clearly-labelled sample data rather than silently presenting
-            // mock output as if it were live.
+            // mock output as if it were live. A missing TfL key is a soft
+            // warning (the keyless path can still work, rate-limited), so it
+            // only changes the diagnosis once the live fetch has failed.
             rec = Self.mockRecommendation()
-            source = .sample
-            statusMessage = "Showing sample data — couldn't reach live services."
+            if Secrets.tflAppKey.isEmpty {
+                source = .sample(.keysMissing)
+                statusMessage = "Sample data — couldn't reach live services. No TfL key is configured (keyless access is rate-limited), so keys may be missing."
+            } else {
+                source = .sample(.servicesFailed)
+                statusMessage = "Sample data — couldn't reach live services."
+            }
         }
+    }
+
+    /// Both schemes set MOCK_DATA (Debug=YES, Release=NO); see project.yml.
+    private static var isMockMode: Bool {
+        ProcessInfo.processInfo.environment["MOCK_DATA"] == "YES"
+    }
+
+    /// Cache identity: a different trip must never reuse a cached result.
+    private var tripKey: String {
+        let arrive = prefs.arriveByEnabled ? String(prefs.arriveBy.timeIntervalSinceReferenceDate) : "now"
+        return "\(prefs.originPostcode)|\(prefs.destinationPostcode)|\(arrive)"
+    }
+
+    // MARK: - Outcome capture (charter loop)
+
+    /// Charter auto-capture: persist the prediction snapshot so the post-trip
+    /// outcome can be scored against it. A trip already in flight (the user
+    /// tapped "I've left") is never replaced by a newer recommendation.
+    private func capturePendingTrip(for r: Recommendation) {
+        if let inFlight = try? history.pendingTrip(), inFlight.actualDeparture != nil {
+            pendingTrip = inFlight
+            return
+        }
+        let trip = PendingTrip(id: r.id,
+                               createdAt: r.generatedAt,
+                               recommendedDeparture: r.context.window.recommendedDeparture,
+                               routeFingerprint: r.route.fingerprint,
+                               routeLabel: r.route.label,
+                               predictedP50Minutes: r.variance.etaP50Minutes,
+                               predictedP90Minutes: r.variance.etaP90Minutes,
+                               actualDeparture: nil)
+        try? history.savePending(trip)
+        pendingTrip = trip
+    }
+
+    /// "I've left": stamps the actual departure on the pending trip.
+    func markDeparted() {
+        try? history.markDeparted(at: Date())
+        pendingTrip = try? history.pendingTrip()
+    }
+
+    /// "I've arrived" + one-tap feedback: archives the outcome against the
+    /// captured prediction and pokes the calibration seam.
+    func recordOutcome(followedRoute: Bool,
+                       judgement: ArrivalJudgement?,
+                       intent: DeviationIntent?) {
+        guard let trip = pendingTrip else { return }
+        let now = Date()
+        let started = trip.actualDeparture ?? trip.createdAt
+        let outcome = OutcomeEvent(
+            id: UUID(),
+            recommendationId: trip.id,
+            startedAt: started,
+            endedAt: now,
+            actualDurationMinutes: max(0, Int(round(now.timeIntervalSince(started) / 60.0))),
+            followedRoute: followedRoute,
+            departureDeltaMinutes: trip.recommendedDeparture.map {
+                Int(round(started.timeIntervalSince($0) / 60.0))
+            } ?? 0,
+            userArrivalJudgement: followedRoute ? judgement : nil,
+            deviationIntent: followedRoute ? nil : intent
+        )
+        try? history.save(outcome: outcome)
+        pendingTrip = try? history.pendingTrip()
+        OutcomeCalibrator.recalibrate(from: (try? history.recentTrips(limit: 100)) ?? [])
     }
 
     private func buildLiveRecommendation() async throws -> Recommendation {
@@ -105,30 +241,40 @@ final class RecommendationViewModel: ObservableObject {
 
     // MARK: - Notifications
 
-    /// Requests authorization and schedules a reminder at the recommended
-    /// departure time. Returns false if permission was denied or there's no rec.
+    /// Foreground path: requests authorization (prompting if needed) and
+    /// schedules a reminder at the recommended departure time. Returns false
+    /// if permission was denied or there's no rec.
     func scheduleLeaveReminder() async -> Bool {
         guard let r = rec else { return false }
         let service = NotificationService()
         guard await service.requestAuthorization() else { return false }
+        await scheduleReminder(for: r, using: service)
+        return true
+    }
+
+    /// Background path: only nudge when the user should leave now/soon, and
+    /// only when notifications are ALREADY authorized — authorization can
+    /// never be requested off a background task (the prompt cannot show), so
+    /// this must never call `requestAuthorization()`.
+    func notifyIfDepartureImminent() async {
+        guard let r = rec else { return }
+        switch r.decision {
+        case .leaveNow, .leaveInMinutes, .takeFallback:
+            let service = NotificationService()
+            guard await service.isAuthorized else { return }
+            await scheduleReminder(for: r, using: service)
+        case .wait:
+            break
+        }
+    }
+
+    private func scheduleReminder(for r: Recommendation, using service: NotificationService) async {
         let fireDate = r.context.window.recommendedDeparture ?? Date()
         await service.scheduleLeaveReminder(
             at: fireDate,
             title: leaveNotificationTitle(for: r),
             body: "\(r.route.label) • ETA \(r.variance.etaP50Minutes) min (P50)"
         )
-        return true
-    }
-
-    /// Used by background refresh: only nudge when the user should leave now/soon.
-    func notifyIfDepartureImminent() async {
-        guard let r = rec else { return }
-        switch r.decision {
-        case .leaveNow, .leaveInMinutes, .takeFallback:
-            _ = await scheduleLeaveReminder()
-        case .wait:
-            break
-        }
     }
 
     private func leaveNotificationTitle(for r: Recommendation) -> String {
@@ -151,7 +297,7 @@ final class RecommendationViewModel: ObservableObject {
                                     rainEnd: Date?,
                                     disruptions: [Disruption],
                                     now: Date) -> Recommendation {
-        let confidenceLevel: ConfidenceLevel = best.confidence > 0.75 ? .high : (best.confidence > 0.5 ? .medium : .low)
+        let confidenceLevel = ConfidenceModel.level(spreadMinutes: best.p90Minutes - best.p50Minutes)
         var limiting: [LimitingFactor] = []
         if (rain ?? 0) > 0.1 { limiting.append(.weatherImpact) }
         if best.severeDisruption { limiting.append(.severeDisruptionNearby) }
@@ -197,7 +343,12 @@ final class RecommendationViewModel: ObservableObject {
     }
 
     private func routeAdvice(from rec: EngineRecommendation, isFallback: Bool) -> RouteAdvice {
-        let lines = rec.plan.legs.compactMap { $0.lineId }.filter { !$0.isEmpty }
+        // Labels show human line names for transit legs only; the fingerprint
+        // keeps canonical ids.
+        let lines = rec.plan.legs
+            .filter { $0.mode != .walk }
+            .compactMap { $0.lineName ?? $0.lineId }
+            .filter { !$0.isEmpty }
         let label = lines.isEmpty ? "Suggested route" : lines.joined(separator: " → ")
         return RouteAdvice(
             label: label,
@@ -211,7 +362,7 @@ final class RecommendationViewModel: ObservableObject {
     }
 
     private func legSummaries(_ plan: JourneyPlan) -> [RouteLegSummary] {
-        plan.legs.map { RouteLegSummary(type: mapMode($0.mode), lineOrService: $0.lineId, approxMinutes: $0.durationMinutes) }
+        plan.legs.map { RouteLegSummary(type: mapMode($0.mode), lineOrService: $0.lineName ?? $0.lineId, approxMinutes: $0.durationMinutes) }
     }
 
     /// Human-readable "where to start" hint from the first transit leg.
@@ -219,7 +370,7 @@ final class RecommendationViewModel: ObservableObject {
         guard let leg = plan.legs.first(where: { $0.mode != .walk }) else { return nil }
         let name = (leg.fromStation?.isEmpty == false) ? leg.fromStation : nil
         let toward = (leg.toStation?.isEmpty == false) ? leg.toStation : nil
-        let line = (leg.lineId?.isEmpty == false) ? leg.lineId : nil
+        let line = [leg.lineName, leg.lineId].compactMap { $0 }.first { !$0.isEmpty }
         let mode = modeLabel(leg.mode)
         if let name { return "\(mode) from: \(name)" }
         if let line, let toward { return "\(mode): take \(line) towards \(toward)" }
@@ -344,11 +495,7 @@ final class RecommendationViewModel: ObservableObject {
         return max(Int(round(ts.timeIntervalSinceNow / 60.0)), 0)
     }
 
-    private static let timeFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateFormat = "HH:mm"
-        return df
-    }()
+    private static let timeFormatter = DateFormatter.fixed(format: "HH:mm")
 
     // MARK: - Sample fallback
 

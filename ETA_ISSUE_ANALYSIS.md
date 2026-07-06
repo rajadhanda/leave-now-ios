@@ -20,8 +20,8 @@ The app consistently shows longer ETAs than Google Maps because:
 // RecommenderV2.swift:90
 let base = estimator.baseETA(minutesForLegs: plan.legs.map { $0.durationMinutes })
 ```
-- Uses durations from TfL API directly
-- TfL API returns durations in seconds, converted to minutes
+- Uses durations from TfL API directly (journey leg `duration` is already in
+  minutes; no unit conversion happens or is needed)
 - These may already include realistic padding
 
 ### Step 2: Monte Carlo Simulation

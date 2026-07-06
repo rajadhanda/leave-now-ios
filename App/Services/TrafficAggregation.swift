@@ -7,13 +7,13 @@ struct TrafficAggregation {
     init() {
         switch AppConfig.trafficProvider {
         case .here:
-            if let apiKey = TrafficSecrets.hereApiKey {
+            if let apiKey = Secrets.hereApiKey {
                 self.trafficService = HereTrafficService(apiKey: apiKey)
             } else {
                 self.trafficService = nil
             }
         case .google:
-            if let apiKey = TrafficSecrets.googleApiKey {
+            if let apiKey = Secrets.googleApiKey {
                 self.trafficService = GoogleTrafficService(apiKey: apiKey)
             } else {
                 self.trafficService = nil

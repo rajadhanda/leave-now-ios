@@ -13,17 +13,13 @@ struct TflTransitService {
         let toStr = String(format: "%.6f,%.6f", dest.latitude, dest.longitude)
         comps.path = "/journey/journeyresults/\(fromStr)/to/\(toStr)"
         var items: [URLQueryItem] = []
-        let appId = Secrets.tflAppId
+        // TfL deprecated app_id; app_key alone authenticates. Keyless requests
+        // still work but are rate-limited, so a missing key is not fatal.
         let appKey = Secrets.tflAppKey
-        if !appId.isEmpty { items.append(.init(name: "app_id", value: appId)) }
         if !appKey.isEmpty { items.append(.init(name: "app_key", value: appKey)) }
         // Use departure time to the nearest minute
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd"
-        let timeFormatter = DateFormatter()
-        timeFormatter.dateFormat = "HHmm"
-        items.append(.init(name: "date", value: dateFormatter.string(from: departure)))
-        items.append(.init(name: "time", value: timeFormatter.string(from: departure)))
+        items.append(.init(name: "date", value: Self.queryDateFormatter.string(from: departure)))
+        items.append(.init(name: "time", value: Self.queryTimeFormatter.string(from: departure)))
         comps.queryItems = items
 
         guard let url = comps.url else { throw URLError(.badURL) }
@@ -33,9 +29,19 @@ struct TflTransitService {
         guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
-        let dto = try JSONDecoder.tfl.decode(JourneyResultsDTO.self, from: data)
-        return dto.toPlans()
+        return try Self.plans(fromJourneyData: data)
     }
+
+    /// Decodes a TfL `journeyresults` payload into plans. Internal (not
+    /// private) so tests exercise the real decoder against canned fixtures.
+    static func plans(fromJourneyData data: Data) throws -> [JourneyPlan] {
+        try JSONDecoder().decode(JourneyResultsDTO.self, from: data).toPlans()
+    }
+
+    // Cached: never build a DateFormatter per request. TfL expects local
+    // wall-clock date/time for the journey query, hence .current timezone.
+    private static let queryDateFormatter = DateFormatter.fixed(format: "yyyyMMdd")
+    private static let queryTimeFormatter = DateFormatter.fixed(format: "HHmm")
 
     /// Current line-status disruptions, keyed by lowercased line id (e.g. "northern").
     /// Lines with a good service are omitted. Defaults to the rail-like modes that
@@ -43,9 +49,7 @@ struct TflTransitService {
     func disruptions(modes: String = "tube,dlr,overground,elizabeth-line") async throws -> [Disruption] {
         var comps = URLComponents(string: "https://api.tfl.gov.uk/Line/Mode/\(modes)/Status")!
         var items: [URLQueryItem] = []
-        let appId = Secrets.tflAppId
         let appKey = Secrets.tflAppKey
-        if !appId.isEmpty { items.append(.init(name: "app_id", value: appId)) }
         if !appKey.isEmpty { items.append(.init(name: "app_key", value: appKey)) }
         if !items.isEmpty { comps.queryItems = items }
 
@@ -62,7 +66,7 @@ struct TflTransitService {
             let severities = (line.lineStatuses ?? []).compactMap {
                 mapTfLSeverity($0.statusSeverity ?? 10, $0.statusSeverityDescription ?? "")
             }
-            guard let worst = severities.max(by: { tflSeverityRank($0) < tflSeverityRank($1) }) else { return nil }
+            guard let worst = severities.max(by: { $0.rank < $1.rank }) else { return nil }
             return Disruption(lineId: id.lowercased(), affectedStations: [], severity: worst)
         }
     }
@@ -94,14 +98,6 @@ private func mapTfLSeverity(_ severity: Int, _ description: String) -> Disruptio
     return .moderate
 }
 
-private func tflSeverityRank(_ severity: DisruptionSeverity) -> Int {
-    switch severity {
-    case .minor: return 1
-    case .moderate: return 2
-    case .severe: return 3
-    }
-}
-
 // MARK: - Decoding (tolerant, minimal fields)
 private struct JourneyResultsDTO: Decodable {
     let journeys: [JourneyDTO]?
@@ -121,8 +117,19 @@ private struct JourneyResultsDTO: Decodable {
 
     struct ModeDTO: Decodable { let id: String? }
     struct PathDTO: Decodable { let stopPoints: [StopPointDTO]? }
-    struct StopPointDTO: Decodable { let name: String? }
-    struct RouteOptionDTO: Decodable { let name: String? }
+    // TfL points carry commonName; some responses also include a plain name.
+    struct StopPointDTO: Decodable {
+        let name: String?
+        let commonName: String?
+        var displayName: String? { commonName ?? name }
+    }
+    // routeOptions[].name is a human route description ("Northern - via Bank");
+    // the canonical line id lives at routeOptions[].lineIdentifier.id.
+    struct RouteOptionDTO: Decodable {
+        let name: String?
+        let lineIdentifier: LineIdentifierDTO?
+        struct LineIdentifierDTO: Decodable { let id: String?; let name: String? }
+    }
 }
 
 private extension JourneyResultsDTO {
@@ -140,11 +147,20 @@ private extension JourneyResultsDTO {
                 case "national-rail": legMode = .nationalRail
                 default: legMode = .walk
                 }
-                let line = l.routeOptions?.first?.name
-                let fromName = l.departurePoint?.name
-                let toName = l.arrivalPoint?.name
+                // Walking legs have no line; their routeOptions name is a
+                // street directive, not something to label or match on.
+                let option = legMode == .walk ? nil : l.routeOptions?.first
+                let lineId = option?.lineIdentifier?.id?.lowercased()
+                let lineName = option?.lineIdentifier?.name ?? option?.name
+                let fromName = l.departurePoint?.displayName
+                let toName = l.arrivalPoint?.displayName
                 let minutes = max(1, l.duration ?? 0)
-                return RouteLeg(mode: legMode, lineId: line, fromStation: fromName, toStation: toName, durationMinutes: minutes)
+                return RouteLeg(mode: legMode,
+                                lineId: lineId,
+                                lineName: lineName,
+                                fromStation: fromName,
+                                toStation: toName,
+                                durationMinutes: minutes)
             }
             if legs.isEmpty { return nil }
             return JourneyPlan(legs: legs)
@@ -152,12 +168,5 @@ private extension JourneyResultsDTO {
     }
 }
 
-private extension JSONDecoder {
-    static var tfl: JSONDecoder {
-        let d = JSONDecoder()
-        d.keyDecodingStrategy = .convertFromSnakeCase
-        return d
-    }
-}
 
 

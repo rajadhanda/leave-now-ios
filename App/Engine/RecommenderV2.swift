@@ -111,7 +111,7 @@ struct RecommenderV2 {
             let (p50, p90) = model.simulateETADistribution(baseMinutes: base + rainDelta,
                                                            priors: allPriors,
                                                            samples: samples)
-            let conf = max(0.0, min(1.0, 1.0 - Double(p90 - p50) / 50.0))
+            let conf = ConfidenceModel.score(spreadMinutes: p90 - p50)
             let util = score(p50: p50, p90: p90, changes: plan.changes, walkMinutes: plan.walkMinutes, comfortBonus: 0)
             return ScoredPlan(plan: plan, p50: p50, p90: p90, confidence: conf, utility: util,
                               rainDelta: rainDelta,
@@ -168,14 +168,6 @@ struct RecommenderV2 {
     }
 
     private func worstDisruption(_ disruptions: [Disruption]) -> Disruption? {
-        disruptions.max { severityRank($0.severity) < severityRank($1.severity) }
-    }
-
-    private func severityRank(_ severity: DisruptionSeverity) -> Int {
-        switch severity {
-        case .minor: return 1
-        case .moderate: return 2
-        case .severe: return 3
-        }
+        disruptions.max { $0.severity.rank < $1.severity.rank }
     }
 }
